@@ -1,0 +1,29 @@
+/* Глобальные стили */
+* {
+margin: 0;
+padding: 0;
+box-sizing: border-box;
+}
+
+body {
+font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+overflow-x: hidden;
+}
+
+/* Убираем выделение синим при клике на мобильных */
+* {
+-webkit-tap-highlight-color: transparent;
+}
+
+/* Плавные переходы */
+a, button {
+transition: all 0.3s ease;
+}
+
+/* Отключаем стандартный стиль кнопок */
+button {
+border: none;
+background: none;
+cursor: pointer;
+font-family: inherit;
+}

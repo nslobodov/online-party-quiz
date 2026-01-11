@@ -1,6 +1,6 @@
 {
-  "name": "online-party-quiz",
-  "version": "1.0.0",
+  "name": "vue-project",
+  "version": "0.0.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -13,16 +13,10 @@
     "lint": "eslint . --fix --cache"
   },
   "dependencies": {
-    "express": "^5.2.1",
-    "qrcode": "^1.5.4",
-    "socket.io": "^4.8.3",
-    "socket.io-client": "^4.8.3",
-    "vue": "^3.5.26",
-    "vue-router": "^4.6.4"
+    "vue": "^3.5.26"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
-    "@vitejs/plugin-legacy": "^7.2.1",
     "@vitejs/plugin-vue": "^6.0.3",
     "eslint": "^9.39.2",
     "eslint-plugin-vue": "~10.6.2",

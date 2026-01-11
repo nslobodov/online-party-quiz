@@ -428,16 +428,10 @@ function getScreenData(gameRoom, screen) {
             options: ['Ошибка загрузки', 'Пожалуйста', 'Перезагрузите', 'Страницу']
         };
     }
-    
+    let photoUrl = '';
     switch(screen) {
         case 'photo':
-            // ВАЖНО: Проверяем наличие фото
-            const hasImage = currentQuestion.hasImage === true || 
-                            currentQuestion.hasImage === 'true' || 
-                            currentQuestion.hasImage === 1;
-            
-            let photoUrl = '';
-            if (hasImage && currentQuestion.photo) {
+            if (currentQuestion.hasImage === 1 && currentQuestion.photo) {
                 photoUrl = currentQuestion.photo.trim();
                 // Корректируем путь если нужно
                 if (photoUrl && !photoUrl.startsWith('/')) {
@@ -450,14 +444,14 @@ function getScreenData(gameRoom, screen) {
             }
             
             console.log(`📷 Данные для фото-экрана: 
-                hasImage=${hasImage}, 
+                hasImage=${currentQuestion.hasImage}, 
                 photoUrl="${photoUrl}", 
                 question=${currentQuestion.question.substring(0, 30)}...`);
             
             return {
                 photoUrl: photoUrl,
                 photoAlt: 'Фото вопроса',
-                hasImage: hasImage
+                hasImage: currentQuestion.hasImage
             };
             
         case 'question':
