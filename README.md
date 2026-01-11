@@ -1,4 +1,4 @@
-# 🎮 Online Party Quiz - Free Multiplayer Game for Local Network
+# Online Party Quiz - Free Multiplayer Game for Local Network
 
 ![Game Preview](https://img.shields.io/badge/Node.js-18.x-green) ![Socket.io](https://img.shields.io/badge/Socket.io-4.x-blue) ![License](https://img.shields.io/badge/license-MIT-yellow)
 
