@@ -190,7 +190,29 @@ Found a bug or have a feature request?
 
 **Made with ❤️ for fun parties and gatherings!**
 
-# 🎮 Online Party Quiz - Бесплатная мультиплеерная игра для локальной сети
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Online Party Quiz - Бесплатная мультиплеерная игра для локальной сети
 
 ![Версия Node.js](https://img.shields.io/badge/Node.js-18.x-green) ![Socket.io](https://img.shields.io/badge/Socket.io-4.x-blue) ![Лицензия](https://img.shields.io/badge/license-MIT-yellow)
 
