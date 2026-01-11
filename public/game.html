@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Игра - Horse Quiz</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="css/game.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="js/socket-manager.js"></script>
+    <script src="js/game.js" defer></script>
+</head>
+<body>
+    <div class="background-animation"></div>
+    
+    <!-- ЭКРАН ЗАГРУЗКИ -->
+    <div id="loading-screen" class="screen active">
+        <div class="loading-container">
+            <div class="loading-spinner"></div>
+            <h2>ПОДКЛЮЧЕНИЕ К ИГРЕ</h2>
+            <p id="loading-message">Установка соединения с сервером...</p>
+            <div class="room-code-display" id="loading-room-code"></div>
+        </div>
+    </div>
+    
+    <!-- ЭКРАН ФОТО-ВОПРОСА -->
+    <div id="photo-screen" class="screen">
+        <div class="screen-content">
+            <div class="game-header">
+                <div class="game-info">
+                    <div class="question-number">
+                        <i class="fas fa-image"></i>
+                        <span id="photo-counter">РАУНД 1/10</span>
+                    </div>
+                    <div class="timer-container">
+                        <!-- Пусто - таймер теперь в футере -->
+                    </div>
+                    <div class="room-info">
+                        <i class="fas fa-door-closed"></i>
+                        <span id="game-room-code">XXX-XXX</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="game-content">
+                <div class="photo-question-container">
+                    <div class="photo-frame">
+                        <!-- ОРИГИНАЛЬНЫЙ КОД - УБИРАЕМ ВСЕ ОГРАНИЧЕНИЯ -->
+                        <img id="question-photo" src="" alt="Фото вопроса" 
+                            style="width: 100%; height: auto; max-width: 100%; max-height: none; object-fit: contain;">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ЭКРАН ВОПРОСА С ВАРИАНТАМИ -->
+    <div id="question-screen" class="screen">
+        <div class="screen-content">
+            <div class="game-header">
+                <div class="game-info">
+                    <div class="question-number">
+                        <i class="fas fa-question-circle"></i>
+                        <span id="question-counter">РАУНД 1/10</span>
+                    </div>
+                    <div class="timer-container">
+                        <div class="timer-circle">
+                            <div class="timer-text" id="question-timer">30</div>
+                        </div>
+                    </div>
+                    <div class="room-info">
+                        <i class="fas fa-door-closed"></i>
+                        <span id="game-room-code2">XXX-XXX</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="game-content">
+                <div class="question-container">
+                    <h2 class="question-text" id="question-text">Загрузка вопроса...</h2>
+                    <div class="options-grid" id="options-container">
+                        <!-- Карточки будут добавляться динамически -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ЭКРАН ЛИДЕРБОРДА -->
+    <div id="leaderboard-screen" class="screen">
+        <div class="screen-content">
+            <div class="game-header">
+                <div class="game-info">
+                    <div class="question-number">
+                        <i class="fas fa-trophy"></i>
+                        <span id="leaderboard-counter">РАУНД 1/10</span>
+                    </div>
+                    <div class="timer-container">
+                        <div class="timer-circle">
+                            <div class="timer-text" id="leaderboard-timer">15</div>
+                        </div>
+                    </div>
+                    <div class="room-info">
+                        <i class="fas fa-door-closed"></i>
+                        <span id="game-room-code3">XXX-XXX</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="game-content">
+                <div class="leaderboard-list" id="leaderboard-list">
+                    <!-- Игроки будут добавляться динамически -->
+                    <div class="leaderboard-placeholder">
+                        <i class="fas fa-trophy" style="font-size: 3rem; color: #f39c12; margin-bottom: 20px;"></i>
+                        <p>Подсчет результатов...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ЭКРАН ПРЕДУПРЕЖДЕНИЯ О ПОСЛЕДНЕМ ВОПРОСЕ -->
+    <div id="last-question-warning-screen" class="screen">
+        <div class="screen-content">
+            <div class="warning-container">
+                <div class="warning-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <h2>ПОСЛЕДНИЙ ВОПРОС!</h2>                                
+                <div class="countdown-container">
+                    <div class="countdown-circle">
+                        <div class="countdown-text" id="warning-timer">5</div>
+                    </div>
+                    <p class="countdown-label">секунд до начала</p>
+                </div>
+                
+                <div class="current-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Текущие очки:</span>
+                        <span class="stat-value" id="current-score-warning">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Текущая позиция:</span>
+                        <span class="stat-value" id="current-position-warning">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ЭКРАН РЕЗУЛЬТАТОВ ИГРЫ -->
+    <div id="results-screen" class="screen">
+        <div class="screen-content">
+            <div class="results-container">
+                <div class="results-header">
+                    <i class="fas fa-trophy" style="font-size: 4rem; color: #f39c12; margin-bottom: 20px;"></i>
+                    <h1>ИГРА ЗАВЕРШЕНА!</h1>
+                    <p class="room-code-final">Комната: <span id="final-room-code">XXX-XXX</span></p>
+                </div>
+                
+                <div class="final-leaderboard">
+                    <h2>ФИНАЛЬНЫЕ РЕЗУЛЬТАТЫ</h2>
+                    <div class="final-leaderboard-list" id="final-leaderboard">
+                        <!-- Финальные результаты -->
+                    </div>
+                </div>
+                
+                <div class="your-final-result">
+                    <h3>ВАШ РЕЗУЛЬТАТ</h3>
+                    <div class="final-score">
+                        <div class="final-score-number" id="final-score">0</div>
+                        <div class="final-score-label">ОЧКОВ</div>
+                    </div>
+                    <div class="final-position">
+                        <i class="fas fa-medal"></i>
+                        <span id="final-position">-</span> место
+                    </div>
+                </div>
+                
+                <div class="action-buttons">
+                    <button class="btn-secondary" onclick="exitGame()">
+                        <i class="fas fa-home"></i> Выйти в лобби
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="game-footer" class="minimal-footer" style="display: none;">
+        <div class="progress-container">
+            <div id="progress-bar" class="progress-bar" style="width: 100%"></div>
+        </div>
+        <div class="timer-box">
+            <div id="footer-timer" class="timer-display">30</div>
+        </div>
+    </div>
+    <script>
+        // Отладочный код: проверка элементов при загрузке
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔍 Проверка элементов фото:');
+            console.log('   #question-photo:', document.getElementById('question-photo'));
+            console.log('   #photo-screen:', document.getElementById('photo-screen'));
+            
+            // Проверяем все img элементы
+            const allImages = document.querySelectorAll('img');
+            console.log('   Всего img элементов:', allImages.length);
+            allImages.forEach((img, i) => {
+                console.log(`   Изображение ${i}: id="${img.id}", src="${img.src}"`);
+            });
+        });
+    </script>
+    <!-- <script src="js/mobile-optimizer.js"></script> -->
+</body>
+</html>

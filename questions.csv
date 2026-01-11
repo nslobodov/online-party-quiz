@@ -1,0 +1,5 @@
+time_sec;question_text;correct_option;n_of_other_options;other_option1;other_option2;other_option3;other_option4;other_option5;has_image;time_for_image;path_to_image
+30;Какая самая быстрая порода лошадей?;Чистокровная английская;3;Арабская;Ахалтекинская;Фризская;;;0;15;https://picsum.photos/800/600?random=1
+30;Как называется детеныш лошади?;Жеребенок;2;Пони;Лошак;;;;0;15;https://picsum.photos/800/600?random=2
+30;Как называется мужская особь лошади?;Жеребец;3;Мерин;Конь;Скакун;;;1;10;/images/horse02.jpg
+20;Сколько зубов у взрослой лошади?;40;4;36;42;44;48;;1;8;/images/horse1.jpg

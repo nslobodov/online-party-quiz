@@ -1,0 +1,15 @@
+{
+  "name": "online-party-quiz",
+  "version": "1.0.0",
+  "description": "Сервер для квиза по лошадям 2026",
+  "main": "mini_server.js",
+  "scripts": {
+    "start": "node mini_server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "qrcode": "^1.5.4",
+    "socket.io": "^4.5.4"
+  }
+}

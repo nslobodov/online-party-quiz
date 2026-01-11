@@ -1,0 +1,471 @@
+/* Стили для экранов ведущего */
+.host-game-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(10, 15, 35, 0.95);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+.host-header {
+    background: rgba(20, 25, 50, 0.9);
+    padding: 15px 20px;
+    border-bottom: 2px solid #3498db;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.host-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #3498db;
+}
+
+.host-content {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.host-question-container {
+    max-width: 800px;
+    margin: 0 auto;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    padding: 30px;
+    border: 1px solid rgba(52, 152, 219, 0.3);
+}
+
+.host-question-text {
+    font-size: 1.8rem;
+    margin-bottom: 30px;
+    color: white;
+    text-align: center;
+    line-height: 1.4;
+}
+
+.host-options-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.host-option {
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(52, 152, 219, 0.5);
+    border-radius: 10px;
+    padding: 20px;
+    color: white;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.host-option:hover {
+    background: rgba(52, 152, 219, 0.2);
+    border-color: #3498db;
+}
+
+.host-timer {
+    text-align: center;
+    font-size: 3rem;
+    font-weight: 700;
+    color: #2ecc71;
+    margin: 20px 0;
+}
+
+.host-leaderboard-container {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.host-leaderboard-item {
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    padding: 15px 20px;
+    margin-bottom: 10px;
+    border-left: 5px solid #3498db;
+}
+
+.host-leaderboard-position {
+    width: 40px;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #f39c12;
+}
+
+.host-leaderboard-player {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.host-leaderboard-score {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #2ecc71;
+}
+
+/* Стили для верхних трех мест */
+.host-leaderboard-item.top-three {
+    background: rgba(243, 156, 18, 0.1);
+    border-left-color: #f39c12;
+}
+
+.host-leaderboard-item:nth-child(1) .host-leaderboard-position {
+    color: gold;
+}
+
+.host-leaderboard-item:nth-child(2) .host-leaderboard-position {
+    color: silver;
+}
+
+.host-leaderboard-item:nth-child(3) .host-leaderboard-position {
+    color: #cd7f32; /* бронза */
+}
+
+/* Стили для кнопки возврата в лобби */
+.host-back-button {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    background: rgba(231, 76, 60, 0.8);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    z-index: 1001;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.host-back-button:hover {
+    background: #e74c3c;
+    transform: scale(1.1);
+}
+
+/* Стили для предпросмотра экрана игрока */
+.player-screen-preview {
+    margin-top: 30px;
+    background: rgba(20, 25, 50, 0.8);
+    border-radius: 15px;
+    padding: 20px;
+    border: 1px solid rgba(52, 152, 219, 0.3);
+}
+
+.screen-preview-container {
+    margin-top: 15px;
+    min-height: 300px;
+    background: rgba(10, 15, 35, 0.9);
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+    border: 2px solid rgba(52, 152, 219, 0.5);
+}
+
+.preview-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 300px;
+    color: #7f8c8d;
+}
+
+.screen-status {
+    margin-left: 10px;
+    font-size: 1.2rem;
+    color: #2ecc71; /* зеленый по умолчанию */
+}
+
+.screen-status.paused {
+    color: #e74c3c; /* красный на паузе */
+}
+
+.screen-status.warning {
+    color: #f39c12; /* оранжевый предупреждение */
+}
+
+.preview-controls {
+    margin-top: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.current-screen-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+#current-screen-name {
+    font-weight: 600;
+    color: #3498db;
+}
+
+.timer-badge {
+    background: rgba(52, 152, 219, 0.3);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-family: 'Orbitron', monospace;
+}
+
+/* Стили для разных экранов предпросмотра */
+.preview-screen {
+    padding: 20px;
+    color: white;
+}
+
+.preview-screen.photo {
+    background: linear-gradient(135deg, #1a2980, #26d0ce);
+}
+
+.preview-screen.question {
+    background: linear-gradient(135deg, #4776E6, #8E54E9);
+}
+
+.preview-screen.leaderboard {
+    background: linear-gradient(135deg, #f46b45, #eea849);
+}
+
+.preview-screen.results {
+    background: linear-gradient(135deg, #8E2DE2, #4A00E0);
+}
+
+.preview-screen.warning {
+    background: linear-gradient(135deg, #f12711, #f5af19);
+}
+
+/* Элементы предпросмотра */
+.preview-question {
+    font-size: 1.3rem;
+    margin-bottom: 20px;
+    text-align: center;
+    line-height: 1.4;
+}
+
+.preview-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.preview-option {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 0.9rem;
+}
+
+.preview-timer {
+    text-align: center;
+    font-size: 2.5rem;
+    font-weight: 700;
+    font-family: 'Orbitron', monospace;
+    margin: 20px 0;
+    color: #2ecc71;
+}
+
+.preview-leaderboard {
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.preview-leaderboard-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+}
+
+.preview-player-rank {
+    width: 30px;
+    font-weight: 700;
+    color: #f39c12;
+}
+
+.preview-player-name {
+    flex: 1;
+    font-size: 0.9rem;
+}
+
+.preview-player-score {
+    font-weight: 700;
+    color: #2ecc71;
+}
+
+/* Прогресс-бар для предпросмотра */
+.preview-progress-bar {
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    margin-top: 15px;
+    overflow: hidden;
+}
+
+.preview-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #2ecc71, #3498db);
+    transition: width 1s linear;
+}
+
+/* Стили для предпросмотра изображений */
+.image-preview-container {
+    background: rgba(10, 15, 35, 0.9);
+    border-radius: 10px;
+    padding: 15px;
+    margin-top: 15px;
+    border: 2px solid rgba(52, 152, 219, 0.5);
+}
+
+.image-preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    color: #3498db;
+    font-weight: 600;
+}
+
+.image-wrapper {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    padding: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 200px;
+}
+
+#preview-image {
+    max-height: 250px;
+    max-width: 100%;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: transform 0.3s ease;
+}
+
+#preview-image:hover {
+    transform: scale(1.02);
+}
+
+.image-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mini-btn {
+    background: rgba(52, 152, 219, 0.3);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.mini-btn:hover {
+    background: rgba(52, 152, 219, 0.5);
+    transform: translateY(-2px);
+}
+
+/* Модальное окно для полноэкранного просмотра */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 2000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.image-modal {
+    max-width: 90vw;
+    max-height: 90vh;
+    background: rgba(20, 25, 50, 0.95);
+    border-radius: 15px;
+    overflow: hidden;
+    border: 2px solid #3498db;
+}
+
+.modal-header {
+    background: rgba(10, 15, 35, 0.95);
+    padding: 15px 20px;
+    border-bottom: 1px solid rgba(52, 152, 219, 0.3);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 5px;
+}
+
+.modal-body {
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-footer {
+    padding: 15px 20px;
+    border-top: 1px solid rgba(52, 152, 219, 0.3);
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+/* Адаптивность для мобильных */
+@media (max-width: 768px) {
+    .image-wrapper {
+        min-height: 150px;
+    }
+    
+    #preview-image {
+        max-height: 200px;
+    }
+    
+    .image-modal {
+        max-width: 95vw;
+        max-height: 95vh;
+    }
+}

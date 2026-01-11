@@ -1,0 +1,1011 @@
+/* GAME SPECIFIC STYLES */
+
+/* ЭКРАН ЗАГРУЗКИ */
+.loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    text-align: center;
+    padding: 20px;
+}
+
+.loading-spinner {
+    width: 80px;
+    height: 80px;
+    border: 5px solid rgba(52, 152, 219, 0.3);
+    border-top: 5px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 30px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.room-code-display {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #9b59b6;
+    margin-top: 20px;
+    text-shadow: 0 0 10px rgba(155, 89, 182, 0.5);
+    letter-spacing: 2px;
+}
+
+/* ЗАГОЛОВОК ИГРЫ */
+.game-header {
+    background: rgba(20, 20, 35, 0.9);
+    padding: 15px 20px;
+    border-bottom: 2px solid rgba(52, 152, 219, 0.3);
+    backdrop-filter: blur(10px);
+}
+
+.game-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.question-number {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #3498db;
+}
+
+.timer-container {
+    display: flex;
+    justify-content: center;
+}
+
+.timer-circle {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 0 20px rgba(231, 76, 60, 0.5);
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+.timer-text {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: white;
+}
+
+.room-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1rem;
+    color: #95a5a6;
+}
+
+/* КОНТЕНТ ИГРЫ */
+.game-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 30px 20px;
+    min-height: calc(100vh - 180px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* ФОТО-ВОПРОС */
+.photo-question-container {
+    text-align: center;
+}
+
+.question-title {
+    font-size: 2rem;
+    color: #ecf0f1;
+    margin-bottom: 30px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.photo-frame {
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto 30px;
+    background: rgba(30, 30, 46, 0.9);
+    border-radius: 15px;
+    overflow: hidden;
+    border: 3px solid rgba(52, 152, 219, 0.5);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    position: relative;
+    min-height: 400px; /* Минимальная высота */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.photo-placeholder {
+    padding: 40px;
+    text-align: center;
+    color: #bdc3c7;
+}
+
+.photo-placeholder i {
+    font-size: 5rem;
+    color: #3498db;
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
+
+.photo-countdown {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 4rem;
+    font-weight: 800;
+    color: #f39c12;
+    margin-top: 20px;
+    text-shadow: 0 0 20px rgba(243, 156, 18, 0.5);
+}
+
+/* ВОССТАНАВЛИВАЕМ ОРИГИНАЛЬНЫЕ СВОЙСТВА ДЛЯ ФОТО */
+#question-photo {
+    width: auto; /* Меняем с width: 100% на auto */
+    height: auto; /* Автоматическая высота */
+    max-width: 100%; /* Максимальная ширина 100% контейнера */
+    max-height: none; /* УБИРАЕМ ограничение по высоте! */
+    object-fit: contain; /* Сохраняем пропорции */
+    display: block;
+    margin: 0 auto;
+}
+
+/* ВОПРОС С ВАРИАНТАМИ */
+.question-text {
+    font-size: 1.8rem;
+    color: #ecf0f1;
+    margin-bottom: 40px;
+    text-align: center;
+    line-height: 1.4;
+}
+
+/* В game.css обновите: */
+.options-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+/* Для мобильных устройств */
+@media (max-width: 768px) {
+    .photo-frame {
+        min-height: 300px; /* Минимальная высота на мобильных */
+    }
+    
+    /* УБЕРИТЕ ЭТИ ОГРАНИЧЕНИЯ если они есть: */
+    /* .photo-frame {
+        max-height: 250px;
+    } */
+}
+
+/* Для 1-2 вариантов делаем больше карточки */
+.option-btn {
+    background: rgba(30, 30, 46, 0.9);
+    border: 2px solid rgba(52, 152, 219, 0.3);
+    border-radius: 15px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: left;
+    min-height: 80px;
+}
+
+/* Если вариантов мало, можно увеличить размер */
+.options-grid:has(:nth-child(1):last-child) .option-btn {
+    /* Если только 1 вариант (редко, но может быть) */
+    height: 120px;
+    justify-content: center;
+}
+
+.options-grid:has(:nth-child(2):last-child) .option-btn {
+    /* Если только 2 варианта */
+    min-height: 100px;
+}
+
+@media (max-width: 768px) {
+    .options-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.option-btn {
+    background: rgba(30, 30, 46, 0.9);
+    border: 2px solid rgba(52, 152, 219, 0.3);
+    border-radius: 15px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: left;
+}
+
+.option-btn:hover {
+    transform: translateY(-3px);
+    border-color: #3498db;
+    background: rgba(52, 152, 219, 0.1);
+    box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+}
+
+.option-letter {
+    width: 40px;
+    height: 40px;
+    background: #3498db;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: white;
+    font-size: 1.2rem;
+}
+
+.option-text {
+    flex: 1;
+    font-size: 1.2rem;
+    color: #ecf0f1;
+    font-weight: 700;
+}
+
+.selected-indicator {
+    background: rgba(46, 204, 113, 0.2);
+    border: 2px solid #2ecc71;
+    border-radius: 10px;
+    padding: 15px;
+    margin-top: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #2ecc71;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* ЛИДЕРБОРД */
+.leaderboard-container {
+    max-width: 800px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.leaderboard-container h2 {
+    color: #f39c12;
+    margin-bottom: 30px;
+    font-size: 1.8rem;
+}
+
+.leaderboard-list {
+    background: rgba(20, 20, 35, 0.8);
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 30px;
+    border: 2px solid rgba(52, 152, 219, 0.3);
+}
+
+.leaderboard-placeholder {
+    padding: 40px;
+    color: #bdc3c7;
+}
+
+.leaderboard-item {
+    display: flex;
+    align-items: center;
+    padding: 15px 20px;
+    margin: 10px 0;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    border-left: 4px solid #3498db;
+}
+
+.leaderboard-position {
+    width: 40px;
+    height: 40px;
+    background: #2c3e50;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: white;
+    margin-right: 15px;
+    font-size: 1.2rem;
+}
+
+.leaderboard-item.first .leaderboard-position {
+    background: linear-gradient(135deg, #f39c12, #d35400);
+}
+
+.leaderboard-item.second .leaderboard-position {
+    background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+}
+
+.leaderboard-item.third .leaderboard-position {
+    background: linear-gradient(135deg, #d35400, #c0392b);
+}
+
+.leaderboard-player {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.leaderboard-avatar {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.leaderboard-name {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #ecf0f1;
+}
+
+.leaderboard-score {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #f39c12;
+    min-width: 80px;
+    text-align: right;
+}
+
+.correct-answer-card {
+    background: rgba(46, 204, 113, 0.1);
+    border: 2px solid #2ecc71;
+    border-radius: 10px;
+    padding: 20px;
+    margin-top: 20px;
+}
+
+.correct-answer-card h3 {
+    color: #2ecc71;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#correct-answer-text {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: white;
+}
+
+/* ПОДВАЛ ИГРЫ */
+.game-footer {
+    background: rgba(20, 20, 35, 0.9);
+    padding: 15px 20px;
+    border-top: 2px solid rgba(52, 152, 219, 0.3);
+    backdrop-filter: blur(10px);
+}
+
+.player-stats {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.player-avatar-mini {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    color: white;
+}
+
+.player-name {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #ecf0f1;
+}
+
+.player-score {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.1rem;
+    color: #f39c12;
+    font-weight: 600;
+}
+
+.hint {
+    text-align: center;
+    color: #95a5a6;
+    font-size: 0.9rem;
+    margin-top: 10px;
+}
+
+/* ПОЗИЦИЯ ИГРОКА */
+.your-position {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 10px;
+}
+
+.position-label {
+    font-size: 1rem;
+    color: #bdc3c7;
+}
+
+.position-value {
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+}
+
+.position-number {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #f39c12;
+}
+
+.position-text {
+    font-size: 1rem;
+    color: #bdc3c6;
+}
+
+/* ЭКРАН РЕЗУЛЬТАТОВ */
+.results-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    text-align: center;
+}
+
+.results-header h1 {
+    color: #f39c12;
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+}
+
+.room-code-final {
+    color: #95a5a6;
+    font-size: 1.2rem;
+}
+
+.final-leaderboard {
+    margin: 40px 0;
+}
+
+.final-leaderboard h2 {
+    color: #3498db;
+    margin-bottom: 25px;
+    font-size: 2rem;
+}
+
+.final-leaderboard-list {
+    background: rgba(20, 20, 35, 0.9);
+    border-radius: 15px;
+    padding: 25px;
+    border: 2px solid rgba(52, 152, 219, 0.3);
+}
+
+.your-final-result {
+    background: rgba(30, 30, 46, 0.9);
+    border-radius: 15px;
+    padding: 30px;
+    margin: 30px auto;
+    max-width: 400px;
+    border: 2px solid rgba(52, 152, 219, 0.5);
+}
+
+.final-score {
+    margin: 20px 0;
+}
+
+.final-score-number {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 4rem;
+    font-weight: 800;
+    color: #f39c12;
+    line-height: 1;
+}
+
+.final-score-label {
+    color: #bdc3c7;
+    font-size: 1.2rem;
+    margin-top: 10px;
+}
+
+.final-position {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-size: 1.5rem;
+    color: #3498db;
+    font-weight: 600;
+    margin-top: 20px;
+}
+
+.action-buttons {
+    margin-top: 40px;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}
+
+/* УТИЛИТЫ */
+.screen {
+    display: none;
+    min-height: 100vh;
+}
+
+.screen.active {
+    display: block;
+}
+
+.btn-secondary {
+    background: rgba(52, 152, 219, 0.2);
+    border: 2px solid #3498db;
+    color: #3498db;
+    padding: 15px 30px;
+    border-radius: 10px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.btn-secondary:hover {
+    background: rgba(52, 152, 219, 0.4);
+    transform: translateY(-2px);
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.notification {
+    animation: slideIn 0.3s ease-out;
+}
+
+.notification-close {
+    cursor: pointer;
+    margin-left: 10px;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+}
+
+.notification-close:hover {
+    opacity: 1;
+}
+
+/* НОВЫЙ МИНИМАЛИСТИЧНЫЙ ФУТЕР С ПРОГРЕСС-БАРОМ */
+.minimal-footer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: #1E1E2E;
+    border-top: 2.5px solid #1F3D5B;
+    display: flex;
+    align-items: center;
+    padding: 20px;
+    backdrop-filter: blur(10px);
+    z-index: 100;
+}
+
+.progress-container {
+    flex: 1;
+    height: 24px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    margin-right: 15px;
+    position: relative;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    border-radius: 12px;
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 100%;
+    transition: width 1s linear;
+    /* УБЕРИТЕ градиент по умолчанию */
+}
+
+/* Добавьте классы для разных цветов */
+.progress-bar.high-time {
+    background: #2ecc71; /* Зеленый */
+}
+
+.progress-bar.medium-time {
+    background: #f39c12; /* Оранжевый */
+}
+
+.progress-bar.low-time {
+    background: #e74c3c; /* Красный */
+    animation: pulse-danger 0.5s infinite alternate;
+}
+
+.progress-bar.paused {
+    background: #f39c12; /* Оранжевый для паузы */
+    opacity: 0.7;
+}
+
+@keyframes pulse-danger {
+    from { opacity: 1; }
+    to { opacity: 0.8; }
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .minimal-footer {
+        height: 50px;
+        padding: 0 15px;
+    }
+    
+    .progress-container {
+        height: 20px;
+        margin-right: 12px;
+    }
+    
+    .timer-box {
+        width: 70px;
+        height: 44px;
+        border-radius: 10px;
+    }
+    
+    .timer-display {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: #2c3e50; /* Цвет по умолчанию */
+    text-align: center;
+    line-height: 1;
+    transition: color 0.5s ease; /* Плавный переход цвета */
+}
+}
+
+/* Скройте старый таймер в шапке */
+.game-header .timer-container {
+    display: none;
+}
+
+/* Соответствующие цвета для таймера */
+.timer-display.high-time {
+    color: #2ecc71;
+}
+
+.timer-display.medium-time {
+    color: #f39c12;
+}
+
+.timer-display.low-time {
+    color: #e74c3c;
+}
+
+.timer-display.paused {
+    color: #f39c12;
+    animation: pulse-paused 2s infinite;
+}
+
+/* Убедитесь что у timer-box нет цветного фона, а только прозрачный белый */
+.timer-box {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    width: 80px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+/* СТИЛИ ДЛЯ ЭКРАНА ПРЕДУПРЕЖДЕНИЯ */
+.warning-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 40px;
+    text-align: center;
+    background: rgba(20, 20, 35, 0.95);
+    border-radius: 20px;
+    border: 3px solid #f39c12;
+    box-shadow: 0 10px 40px rgba(243, 156, 18, 0.3);
+    backdrop-filter: blur(10px);
+}
+
+.warning-icon {
+    font-size: 5rem;
+    color: #f39c12;
+    margin-bottom: 20px;
+    animation: pulse-warning 1.5s infinite;
+}
+
+@keyframes pulse-warning {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.1); opacity: 0.8; }
+}
+
+.warning-container h2 {
+    color: #f39c12;
+    font-size: 2.5rem;
+    margin-bottom: 15px;
+    text-shadow: 0 0 10px rgba(243, 156, 18, 0.5);
+}
+
+.warning-text {
+    font-size: 1.5rem;
+    color: #ecf0f1;
+    margin-bottom: 10px;
+}
+
+.warning-subtext {
+    font-size: 1.1rem;
+    color: #bdc3c7;
+    margin-bottom: 30px;
+}
+
+.countdown-container {
+    margin: 30px 0;
+}
+
+.countdown-circle {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f39c12, #d35400);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 15px;
+    border: 5px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 0 30px rgba(243, 156, 18, 0.5);
+    animation: pulse 1.5s infinite;
+}
+
+.countdown-text {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: white;
+}
+
+.countdown-label {
+    color: #95a5a6;
+    font-size: 1rem;
+}
+
+.current-stats {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-label {
+    display: block;
+    color: #95a5a6;
+    font-size: 0.9rem;
+    margin-bottom: 5px;
+}
+
+.stat-value {
+    display: block;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #2ecc71;
+}
+
+#current-position-warning {
+    color: #3498db;
+}
+
+/* RESPONSIVE STYLES - Mobile First */
+
+/* Базовые настройки для всех устройств */
+body {
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
+    -moz-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+/* Для очень маленьких экранов (до 360px) */
+@media (max-width: 360px) {
+    .container, .screen-content {
+        padding: 10px 5px;
+    }
+    
+    .question-text {
+        font-size: 1.4rem !important;
+        padding: 0 5px;
+    }
+    
+    .option-btn {
+        padding: 15px 10px;
+        min-height: 70px;
+    }
+}
+
+/* Мобильные устройства (до 480px) */
+@media (max-width: 480px) {
+    .game-header {
+        padding: 10px 15px;
+    }
+    
+    .question-number, .room-info {
+        font-size: 0.9rem;
+    }
+    
+    .question-text {
+        font-size: 1.5rem;
+        line-height: 1.3;
+        margin-bottom: 25px;
+    }
+    
+    .options-grid {
+        gap: 12px;
+    }
+    
+    .option-btn {
+        padding: 18px 15px;
+        min-height: 75px;
+    }
+    
+    .option-text {
+        font-size: 1.1rem;
+    }
+    
+    .leaderboard-item {
+        padding: 12px 15px;
+    }
+    
+    .leaderboard-name {
+        font-size: 1rem;
+    }
+    
+    .photo-frame {
+        min-height: 250px;
+    }
+}
+
+/* Планшеты (481px - 768px) */
+@media (min-width: 481px) and (max-width: 768px) {
+    .game-content {
+        padding: 20px 15px;
+    }
+    
+    .question-text {
+        font-size: 1.6rem;
+    }
+    
+    .options-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+    }
+    
+    .option-btn {
+        min-height: 85px;
+    }
+}
+
+/* Ландшафтная ориентация мобильных */
+@media (max-height: 500px) and (orientation: landscape) {
+    .game-header {
+        padding: 8px 15px;
+    }
+    
+    .game-content {
+        padding: 15px;
+        min-height: calc(100vh - 140px);
+    }
+    
+    .photo-frame {
+        min-height: 180px;
+        max-height: 200px;
+    }
+    
+    .options-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .option-btn {
+        min-height: 60px;
+        padding: 12px;
+    }
+}
+
+/* Большие экраны (более 1200px) */
+@media (min-width: 1200px) {
+    .game-content {
+        max-width: 1400px;
+    }
+    
+    .options-grid {
+        max-width: 1000px;
+    }
+    
+    .photo-frame {
+        max-width: 1000px;
+    }
+}
+
+/* Touch-оптимизированные элементы */
+.option-btn, button, .clickable {
+    min-height: 44px;
+    min-width: 44px;
+    touch-action: manipulation;
+}
+
+/* Отключаем выделение при клике на мобильных */
+* {
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Улучшаем читаемость на OLED экранах */
+@media (prefers-color-scheme: dark) {
+    body {
+        background: #000;
+    }
+}
+
+/* Адаптивные изображения */
+#question-photo, img {
+    max-width: 100%;
+    height: auto;
+}

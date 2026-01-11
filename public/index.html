@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Game - Викторина о лошадях</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="css/host.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Orbitron:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="js/socket-manager.js"></script>
+    <script src="https://unpkg.com/qrcode@1.4.4/build/qrcode.min.js"></script>
+</head>
+<body>
+    <div class="background-animation"></div>
+    
+    <!-- ЭКРАН ВЫБОРА РОЛИ И ВВОДА ИМЕНИ -->
+    <div id="role-selection" class="screen active">
+        <div class="screen-content">
+            <div class="logo-container">
+                <div class="logo">
+                    <i class="fas fa-horse-head"></i>
+                    <span class="logo-text">HORSE QUIZ</span>
+                    <span class="logo-subtext">ВИКТОРИНА О ЛОШАДЯХ</span>
+                </div>
+            </div>
+            <div class="card-container">
+                <div class="card">
+                    <h1 class="title-glow">КОННАЯ ВИКТОРИНА</h1>
+                    <p class="subtitle">Выберите вашу роль и начните игру</p>
+                    
+                    <div class="room-input-container" id="room-input-container" style="display: none;">
+                        <input type="text" id="roomCode" placeholder="Введите код комнаты" class="input-glow">
+                    </div>
+                    
+                    <div class="role-selection">
+                        <div class="role-card" data-role="player" addEventListener ="selectRole('player')">
+                            <div class="role-icon player-icon">
+                                <i class="fas fa-gamepad"></i>
+                            </div>
+                            <h3>ИГРОК</h3>
+                            <p>Присоединитесь к существующей комнате</p>
+                        </div>
+                        
+                        <div class="role-card" data-role="host" addEventListener ="selectRole('host')">
+                            <div class="role-icon host-icon">
+                                <i class="fas fa-crown"></i>
+                            </div>
+                            <h3>ВЕДУЩИЙ</h3>
+                            <p>Создайте новую комнату</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ЭКРАН ЛОББИ ВЕДУЩЕГО -->
+    <div id="host-lobby" class="screen">
+        <div class="screen-content">
+            <div class="header">
+                <div class="back-btn" onclick="goBack()">
+                    <i class="fas fa-arrow-left"></i>
+                </div>
+                <div class="header-title">
+                    <h2><i class="fas fa-crown"></i> КОМНАТА ВЕДУЩЕГО</h2>
+                    <p class="room-code">КОД КОМНАТЫ: <span id="host-room-code" class="code-glow">BSQ-5832</span></p>
+                </div>
+                <div class="player-count">
+                    <i class="fas fa-users"></i>
+                    <span id="host-player-count">1</span>
+                </div>
+            </div>
+            
+            <div class="content">
+                <!-- QR-код для подключения -->
+                <div class="qr-section">
+                    <div class="qr-container card" style="margin-bottom: 30px; text-align: center;">
+                        <h3 class="section-title"><i class="fas fa-qrcode"></i> QR-КОД ДЛЯ ПОДКЛЮЧЕНИЯ</h3>
+                        <div id="qr-code" style="margin: 20px auto; width: 200px; height: 200px;"></div>
+                        <div class="join-link-container" style="margin-top: 15px;">
+                            <div style="display: flex; gap: 10px;">
+                                <input type="text" id="join-link" readonly 
+                                       style="flex: 1; padding: 10px; background: rgba(20, 20, 35, 0.8); 
+                                              border: 1px solid #3498db; border-radius: 8px; color: #fff; font-size: 0.9rem;">
+                                <button id="copy-link-btn" class="control-btn" style="white-space: nowrap;">
+                                    <i class="fas fa-copy"></i> Копировать
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="player-list-container">
+                    <h3 class="section-title"><i class="fas fa-list"></i> ПОДКЛЮЧЕННЫЕ ИГРОКИ</h3>
+                    <div class="player-list" id="host-player-list">
+                        <!-- Игроки будут добавляться здесь -->
+                    </div>
+                </div>
+                
+                <div class="start-game-container">
+                    <button onclick="startGame()" class="btn-primary start-game-btn" id="start-game-btn">
+                        <i class="fas fa-play"></i> НАЧАТЬ ИГРУ
+                        <div class="btn-pulse"></div>
+                    </button>
+                </div>
+                
+                <div class="timer-controls">
+                    <button id="pause-timer-btn" class="control-btn" style="background: #e74c3c;">
+                        <i class="fas fa-pause"></i> Пауза
+                    </button>
+                    <button id="resume-timer-btn" class="control-btn" style="background: #2ecc71;">
+                        <i class="fas fa-play"></i> Продолжить
+                    </button>
+                </div>
+                <div class="player-screen-preview">
+                    <h3 class="section-title">
+                        <i class="fas fa-desktop"></i> ЭКРАН ИГРОКА
+                        <span class="screen-status" id="screen-status-indicator">●</span>
+                    </h3>
+                    
+                    <div class="screen-preview-container" id="player-screen-preview">
+                        <!-- Будет заполняться динамически -->
+                        <div class="preview-placeholder">
+                            <i class="fas fa-gamepad" style="font-size: 3rem; color: #7f8c8d;"></i>
+                            <p>Игра еще не начата</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Добавим мини-плеер для изображений -->
+                    <div class="image-preview-container" id="image-preview-container" style="display: none;">
+                        <div class="image-preview-header">
+                            <span>ФОТО-ВОПРОС</span>
+                            <button class="mini-btn" onclick="toggleImageFullscreen()" title="На весь экран">
+                                <i class="fas fa-expand"></i>
+                            </button>
+                        </div>
+                        <div class="image-wrapper">
+                            <img id="preview-image" src="" alt="Предпросмотр фото" 
+                                style="width: 100%; border-radius: 8px; max-height: 250px; object-fit: contain;">
+                        </div>
+                        <div class="image-info">
+                            <span id="image-timer">15 сек</span>
+                            <button class="mini-btn" onclick="downloadImage()" title="Скачать">
+                                <i class="fas fa-download"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="preview-controls">
+                        <div class="current-screen-info">
+                            <span id="current-screen-name">Ожидание...</span>
+                            <span id="current-screen-timer" class="timer-badge">--</span>
+                        </div>
+                        <button class="mini-btn" onclick="togglePreviewMode()" title="Переключить вид">
+                            <i class="fas fa-exchange-alt"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="preview-progress-bar" id="preview-progress-bar">
+                        <div class="preview-progress-fill" id="preview-progress-fill" style="width: 100%"></div>
+                    </div>
+                </div>
+
+                <!-- Добавим модальное окно для полноэкранного просмотра изображения -->
+                <div id="fullscreen-image-modal" class="modal-overlay" style="display: none;">
+                    <div class="modal-content image-modal">
+                        <div class="modal-header">
+                            <h3>ФОТО-ВОПРОС</h3>
+                            <button class="modal-close" onclick="closeFullscreenImage()">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <img id="fullscreen-image" src="" alt="Полноэкранное фото" 
+                                style="max-width: 100%; max-height: 80vh; border-radius: 10px;">
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn-secondary" onclick="downloadImage()">
+                                <i class="fas fa-download"></i> Скачать
+                            </button>
+                            <button class="btn-secondary" onclick="closeFullscreenImage()">
+                                Закрыть
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ЭКРАН ОЖИДАНИЯ ИГРОКА -->
+    <div id="player-lobby" class="screen">
+        <div class="screen-content">
+            <div class="header">
+                <div class="back-btn" addEventListener ="goBack()">
+                    <i class="fas fa-arrow-left"></i>
+                </div>
+                <div class="header-title">
+                    <h2><i class="fas fa-hourglass-half"></i> ОЖИДАНИЕ НАЧАЛА</h2>
+                    <p class="room-code">КОД КОМНАТЫ: <span id="player-room-code" class="code-glow">BSQ-5832</span></p>
+                </div>
+                <div class="player-count">
+                    <i class="fas fa-users"></i>
+                    <span id="player-lobby-count">1</span>
+                </div>
+            </div>
+            
+            <div class="content">
+                <div class="waiting-container">
+                    <div class="loader">
+                        <div class="loader-circle"></div>
+                        <div class="loader-text" id="waiting-text">ОЖИДАНИЕ ВЕДУЩЕГО...</div>
+                    </div>
+                    
+                    <div class="player-list-container">
+                        <h3 class="section-title"><i class="fas fa-users"></i> ИГРОКИ В КОМНАТЕ</h3>
+                        <div class="player-list" id="player-list">
+                            <!-- Игроки будут добавляться здесь -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ЭКРАН ВОПРОСА ДЛЯ ВЕДУЩЕГО -->
+    <div id="host-question" class="screen">
+        <div class="question-header">
+            <div class="round-info">
+                <div class="round-badge">РАУНД <span id="host-round-number">1</span> ИЗ <span id="host-total-rounds">3</span></div>
+                <div id="host-category-tag" class="category-tag">ИСТОРИЯ</div>
+            </div>
+            
+            <div class="timer-container">
+                <div class="timer-circle">
+                    <svg class="timer-svg" width="100" height="100">
+                        <circle class="timer-bg" cx="50" cy="50" r="45"></circle>
+                        <circle class="timer-progress" cx="50" cy="50" r="45"></circle>
+                    </svg>
+                    <div class="timer-text" id="host-timer">30</div>
+                </div>
+                <div class="timer-label">СЕКУНД</div>
+            </div>
+            
+            <div class="question-counter">
+                ВОПРОС <span id="host-question-number">1</span> ИЗ <span id="host-total-questions">5</span>
+            </div>
+        </div>
+        
+        <div class="question-content">
+            <div class="question-text-container">
+                <h3 class="question-text" id="host-question-text">Загрузка вопроса...</h3>
+            </div>
+            
+            <div class="answer-grid" id="host-answer-grid">
+                <!-- Варианты ответов будут добавляться здесь -->
+            </div>
+        </div>
+        
+        <div class="question-footer">
+            <div class="players-answered">
+                <i class="fas fa-user-check"></i>
+                <span>Ответили: <span id="host-answered-count">0/0</span></span>
+            </div>
+            <div class="correct-answer-display" id="host-correct-answer" style="display: none;">
+                <i class="fas fa-check-circle"></i>
+                <span>Правильный ответ: <span id="host-correct-answer-text"></span></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ЭКРАН ВОПРОСА ДЛЯ ИГРОКА -->
+    <div id="player-question" class="screen">
+        <div class="question-header">
+            <div class="round-info">
+                <div class="round-badge">РАУНД <span id="player-round-number">1</span> ИЗ <span id="player-total-rounds">3</span></div>
+                <div id="player-category-tag" class="category-tag">ИСТОРИЯ</div>
+            </div>
+            
+            <div class="timer-container">
+                <div class="timer-circle">
+                    <svg class="timer-svg" width="100" height="100">
+                        <circle class="timer-bg" cx="50" cy="50" r="45"></circle>
+                        <circle class="timer-progress" cx="50" cy="50" r="45"></circle>
+                    </svg>
+                    <div class="timer-text" id="player-timer">30</div>
+                </div>
+                <div class="timer-label">СЕКУНД</div>
+            </div>
+            
+            <div class="question-counter">
+                ВОПРОС <span id="player-question-number">1</span> ИЗ <span id="player-total-questions">5</span>
+            </div>
+        </div>
+        
+        <div class="question-content">
+            <div class="question-text-container">
+                <h3 class="question-text" id="player-question-text">Загрузка вопроса...</h3>
+            </div>
+            
+            <div class="answer-grid" id="player-answer-grid">
+                <!-- Варианты ответов будут добавляться здесь -->
+            </div>
+        </div>
+        
+        <div class="question-footer">
+            <div class="selected-answer">
+                <i class="fas fa-hand-pointer"></i>
+                <span>Ваш ответ: <span class="answer-selected-text" id="player-selected-answer">еще не выбран</span></span>
+            </div>
+            <div class="answer-submitted" id="answer-submitted" style="display: none;">
+                <i class="fas fa-paper-plane"></i>
+                <span>Ответ отправлен!</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ЭКРАН ЛИДЕРБОРДА ДЛЯ ВЕДУЩЕГО -->
+    <div id="host-leaderboard" class="screen">
+        <div class="header">
+            <div class="header-title">
+                <h2><i class="fas fa-trophy"></i> РЕЙТИНГ</h2>
+                <p id="host-leaderboard-round">РАУНД 1 ИЗ 3</p>
+            </div>
+            <div class="player-count">
+                <i class="fas fa-question-circle"></i>
+                <span id="host-question-counter">ВОПРОС 1/5</span>
+            </div>
+        </div>
+        
+        <div class="content">
+            <div class="leaderboard-container">
+                <div class="leaderboard-header">
+                    <div class="leaderboard-title">ТАБЛИЦА ЛИДЕРОВ</div>
+                    <div class="round-progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="host-progress-fill" style="width: 0%"></div>
+                        </div>
+                        <div class="progress-text" id="host-progress-text">0/5 ВОПРОСОВ</div>
+                    </div>
+                </div>
+                
+                <div class="correct-answer-banner" id="host-correct-answer-banner">
+                    <i class="fas fa-check"></i>
+                    <span>Правильный ответ: <strong id="host-leaderboard-correct-answer"></strong> (+150 очков)</span>
+                </div>
+                
+                <div class="leaderboard-list" id="host-leaderboard-list">
+                    <!-- Рейтинг игроков будет добавляться здесь -->
+                </div>
+            </div>
+            
+            <div class="leaderboard-controls">
+                <button class="control-btn next-btn" id="host-next-btn" addEventListener ="nextQuestion()" style="display: none;">
+                    <i class="fas fa-forward"></i> СЛЕДУЮЩИЙ ВОПРОС
+                </button>
+                <p class="hint"><i class="fas fa-clock"></i> Автоматический переход через <span id="host-countdown">10</span> секунд</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ЭКРАН ЛИДЕРБОРДА ДЛЯ ИГРОКА -->
+    <div id="player-leaderboard" class="screen">
+        <div class="header">
+            <div class="header-title">
+                <h2><i class="fas fa-chart-line"></i> ВАША ПОЗИЦИЯ</h2>
+                <p id="player-leaderboard-round">РАУНД 1 ИЗ 3</p>
+            </div>
+            <div class="player-position">
+                <div class="position-badge" id="player-position-badge">- МЕСТО</div>
+            </div>
+        </div>
+        
+        <div class="content">
+            <div class="leaderboard-container">
+                <div class="leaderboard-header">
+                    <div class="leaderboard-title">ТЕКУЩИЙ РЕЙТИНГ</div>
+                    <div class="player-score-display">
+                        <div class="score-label">Ваши очки:</div>
+                        <div class="score-value" id="player-current-score">0</div>
+                    </div>
+                </div>
+                
+                <div class="correct-answer-banner" id="player-correct-answer-banner">
+                    <i class="fas fa-check"></i>
+                    <span>Правильный ответ: <strong id="player-leaderboard-correct-answer"></strong></span>
+                </div>
+                
+                <div class="leaderboard-list" id="player-leaderboard-list">
+                    <!-- Рейтинг игроков будет добавляться здесь -->
+                </div>
+            </div>
+            
+            <div class="waiting-next-round">
+                <div class="loader">
+                    <div class="loader-circle"></div>
+                    <div class="loader-text" id="player-waiting-text">ОЖИДАНИЕ СЛЕДУЮЩЕГО ВОПРОСА...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ЭКРАН ОКОНЧАНИЯ ИГРЫ ДЛЯ ВЕДУЩЕГО -->
+    <div id="host-end" class="screen">
+        <div class="header">
+            <div class="header-title">
+                <h2><i class="fas fa-flag-checkered"></i> ИГРА ОКОНЧЕНА</h2>
+            </div>
+        </div>
+        
+        <div class="content">
+            <div class="final-results">
+                <div class="winner-container" id="host-winner-container">
+                    <!-- Победитель будет отображаться здесь -->
+                </div>
+                
+                <div class="final-leaderboard-container">
+                    <h3 class="section-title"><i class="fas fa-award"></i> ФИНАЛЬНЫЙ РЕЙТИНГ</h3>
+                    <div class="final-leaderboard" id="host-final-leaderboard">
+                        <!-- Финальный список игроков -->
+                    </div>
+                </div>
+                
+                <div class="game-stats">
+                    <div class="stat-item">
+                        <div class="stat-value" id="host-total-questions-stat">0</div>
+                        <div class="stat-label">ВОПРОСОВ</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="host-total-players-stat">0</div>
+                        <div class="stat-label">ИГРОКОВ</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="host-total-rounds-stat">0</div>
+                        <div class="stat-label">РАУНДОВ</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="final-controls">
+                <button class="btn-primary" addEventListener ="goToStart()">
+                    <i class="fas fa-redo"></i> НОВАЯ ИГРА
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ЭКРАН ОКОНЧАНИЯ ИГРЫ ДЛЯ ИГРОКА -->
+    <div id="player-end" class="screen">
+        <div class="header">
+            <div class="header-title">
+                <h2><i class="fas fa-flag-checkered"></i> ИГРА ОКОНЧЕНА</h2>
+            </div>
+            <div class="player-position">
+                <div class="position-badge" id="player-final-position">- МЕСТО</div>
+            </div>
+        </div>
+        
+        <div class="content">
+            <div class="personal-results">
+                <div class="result-card">
+                    <div class="result-header">
+                        <h3>ВАШ РЕЗУЛЬТАТ</h3>
+                        <div class="result-position" id="player-final-position-badge">- МЕСТО</div>
+                    </div>
+                    
+                    <div class="result-score">
+                        <div class="score-large" id="player-final-score">0</div>
+                        <div class="score-label">ОЧКОВ</div>
+                    </div>
+                    
+                    <div class="result-stats">
+                        <div class="stat-row">
+                            <span>Правильных ответов:</span>
+                            <span class="stat-value" id="player-correct-answers">0/0</span>
+                        </div>
+                        <div class="stat-row">
+                            <span>Всего раундов:</span>
+                            <span class="stat-value" id="player-total-rounds-stat">0</span>
+                        </div>
+                        <div class="stat-row">
+                            <span>Лучший результат:</span>
+                            <span class="stat-value" id="player-best-score">0</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="final-leaderboard-container">
+                    <h3 class="section-title"><i class="fas fa-trophy"></i> ФИНАЛЬНЫЙ РЕЙТИНГ</h3>
+                    <div class="final-leaderboard" id="player-final-leaderboard">
+                        <!-- Финальный список игроков -->
+                    </div>
+                </div>
+            </div>
+            
+            <div class="final-controls">
+                <button class="btn-primary" addEventListener ="goToStart()">
+                    <i class="fas fa-home"></i> ВЕРНУТЬСЯ В МЕНЮ
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Сообщения об ошибках -->
+    <div id="error-toast" class="error-toast">
+        <div class="error-content">
+            <span id="error-message"></span>
+        </div>
+    </div>
+    <script src="js/config.js"></script>
+    <script src="js/mini_script.js"></script>
+</body>
+</html>
