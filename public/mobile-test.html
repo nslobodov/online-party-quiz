@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мобильный тест</title>
+    <style>
+        body { font-family: Arial; padding: 20px; background: #f0f0f0; }
+        .card { background: white; padding: 20px; margin: 10px 0; border-radius: 10px; }
+        button { padding: 15px; width: 100%; margin: 5px 0; background: #007bff; color: white; border: none; border-radius: 5px; }
+        .info { background: #e7f3ff; padding: 10px; border-radius: 5px; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <h1>📱 Мобильный тест</h1>
+    
+    <div class="card">
+        <h3>Информация об устройстве</h3>
+        <div id="device-info" class="info"></div>
+    </div>
+    
+    <div class="card">
+        <h3>Тест подключения</h3>
+        <button onclick="testConnection()">🔗 Проверить подключение</button>
+        <div id="test-result" class="info"></div>
+    </div>
+    
+    <div class="card">
+        <h3>Подключиться к комнате</h3>
+        <input type="text" id="roomCode" placeholder="Код комнаты (ABC-123)" style="width: 100%; padding: 10px; margin: 5px 0;">
+        <input type="text" id="mobileName" placeholder="Ваше имя" value="МобильныйИгрок" style="width: 100%; padding: 10px; margin: 5px 0;">
+        <button onclick="joinRoom()">🚪 Присоединиться</button>
+        <div id="join-result" class="info"></div>
+    </div>
+    
+    <script>
+        const serverURL = window.location.origin;
+        let socket = null;
+        
+        function updateDeviceInfo() {
+            const info = document.getElementById('device-info');
+            info.innerHTML = `
+                📱 Устройство: ${navigator.userAgent}<br>
+                🖥️ Платформа: ${navigator.platform}<br>
+                📶 Онлайн: ${navigator.onLine ? '✅ Да' : '❌ Нет'}<br>
+                🔗 Сервер: ${serverURL}
+            `;
+        }
+        
+        async function testConnection() {
+            const resultEl = document.getElementById('test-result');
+            resultEl.textContent = 'Проверяем...';
+            
+            try {
+                // Проверяем HTTP
+                const response = await fetch(`${serverURL}/api/health`);
+                const data = await response.json();
+                
+                // Проверяем WebSocket
+                if (!socket) {
+                    socket = io(serverURL);
+                    await new Promise(resolve => {
+                        socket.on('connect', resolve);
+                        socket.on('connect_error', (err) => {
+                            throw new Error(`WebSocket error: ${err.message}`);
+                        });
+                    });
+                }
+                
+                resultEl.innerHTML = `
+                    ✅ Подключение работает!<br>
+                    • Сервер здоров: ${data.healthy ? '✅' : '❌'}<br>
+                    • Комнат активных: ${data.rooms}<br>
+                    • WebSocket: ${socket.connected ? '✅ Подключен' : '❌ Отключен'}
+                `;
+            } catch (error) {
+                resultEl.innerHTML = `❌ Ошибка: ${error.message}`;
+            }
+        }
+        
+        function joinRoom() {
+            const roomCode = document.getElementById('roomCode').value.trim();
+            const playerName = document.getElementById('mobileName').value.trim();
+            const resultEl = document.getElementById('join-result');
+            
+            if (!roomCode || !playerName) {
+                resultEl.textContent = '❌ Введите код комнаты и имя!';
+                return;
+            }
+            
+            if (!socket || !socket.connected) {
+                resultEl.textContent = '❌ Сначала проверьте подключение!';
+                return;
+            }
+            
+            resultEl.textContent = 'Присоединяемся...';
+            
+            socket.emit('join-room', { roomCode, playerName });
+            
+            socket.once('room-joined', (data) => {
+                resultEl.innerHTML = `
+                    ✅ Присоединились!<br>
+                    • Игроков в комнате: ${data.players.length}<br>
+                    • Ваша роль: ${data.isHost ? 'Ведущий' : 'Игрок'}
+                `;
+            });
+            
+            socket.once('room-error', (data) => {
+                resultEl.textContent = `❌ Ошибка: ${data.message}`;
+            });
+        }
+        
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', () => {
+            updateDeviceInfo();
+        });
+    </script>
+    <script src="https://cdn.socket.io/4.8.3/socket.io.min.js"></script>
+</body>
+</html>

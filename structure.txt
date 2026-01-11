@@ -1,0 +1,88 @@
+online-party-quiz
+¦   .eslintrc.json
+¦   .gitattributes
+¦   .gitignore
+¦   .prettierrc
+¦   eslint.config.mjs
+¦   index.html
+¦   LICENSE
+¦   mini_server.js
+¦   package-lock.json
+¦   package.json
+¦   qrcode-simple.js
+¦   questions.csv
+¦   README.md
+¦   simple-csv-loader.js
+¦   structure.txt
+¦   vite.config.js
+¦   
++---.husky
+¦       pre-commit
+¦       
++---demo-project
+¦   L---vue-project # Αϋλ ρξηδΰν ςξλόκξ δλÿ οξλσχενθÿ νσζνξγξ package.json
+¦                 
++---ISSUE_TEMPLATE
+¦       bug_report.md
+¦       feature_request.md
+¦       
++---node_modules # Òσς ξχενό μνξγξ βρεγξ
+¦     
++---public
+¦   ¦   game.html
+¦   ¦   index.html
+¦   ¦   room.html
+¦   ¦   
+¦   +---css
+¦   ¦       game.css
+¦   ¦       host.css
+¦   ¦       styles.css
+¦   ¦       
+¦   +---images
+¦   ¦       horse02.jpg
+¦   ¦       horse1.jpg
+¦   ¦       
+¦   L---js
+¦           config.js
+¦           game.js
+¦           mini_script.js
+¦           mobile-optimiser.js
+¦           room.js
+¦           socket-manager.js
+¦           
++---screenshots
+¦       host.png
+¦       name.png
+¦       question.png
+¦       
+L---src
+    ¦   App.vue
+    ¦   main.js
+    ¦   
+    +---assets
+    ¦       global.css
+    ¦       
+    +---components
+    ¦   ¦   HelloWorld.vue
+    ¦   ¦   TheWelcome.vue
+    ¦   ¦   WelcomeItem.vue
+    ¦   ¦   
+    ¦   L---icons
+    ¦           IconCommunity.vue
+    ¦           IconDocumentation.vue
+    ¦           IconEcosystem.vue
+    ¦           IconSupport.vue
+    ¦           IconTooling.vue
+    ¦           
+    +---router
+    ¦       index.js
+    ¦       
+    +---utils
+    ¦       socket-manager.js
+    ¦       
+    L---views
+            GameView.vue
+            HomeView.vue
+            HostView.vue
+            RoomView.vue
+            

@@ -1,16 +1,33 @@
 <template>
   <div class="home">
-    <h1>Главная страница Horse Quiz</h1>
-    <p>Добро пожаловать в викторину о лошадях!</p>
-    <router-link to="/room" class="btn">
-      Присоединиться к игре
-    </router-link>
+    <div class="background-animation"></div>
+    <div class="screen-content">
+        <div class="logo-container">
+            <div class="logo">
+                <i class="fas fa-horse-head"></i>
+                <span class="logo-text">HORSE QUIZ</span>
+                <span class="logo-subtext">ВИКТОРИНА О ЛОШАДЯХ</span>
+            </div>
+        </div>
+        <div class="card-container">
+            <div class="card">
+                <h1 class="title-glow">КОННАЯ ВИКТОРИНА</h1>
+                <div class="button-container">
+                    <button @click="showQRCode()" class="btn-create-room" id="btn-create-room">Создать комнату</button>
+                    <router-link to="/host" class="btn-redirect-to-host-page">Управлять игрой</router-link>
+                </div>
+            </div>
+        </div>
+        <router-link to="/room" class="btn">
+            Присоединиться к игре
+        </router-link>
+    </div>
   </div>
 </template>
 
 <script>
 export default {
-  name: 'Home'
+  name: 'HomeView'
 }
 </script>
 
