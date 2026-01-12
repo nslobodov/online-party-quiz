@@ -1,103 +1,131 @@
 // server/services/RoomService.ts
-// Импортируем типы
-import type { Player, Room } from '../types/room.types.js'; // Добавляем .js для NodeNext
+import { Room, Player } from '../../shared/types.js'
 
 export class RoomService {
-  private rooms: Map<string, Room> = new Map();
-  private playerRooms: Map<string, string> = new Map();
+  private rooms: Map<string, Room> = new Map()
+  private socketToRoom: Map<string, string> = new Map() // socketId -> roomCode
 
-  createRoom(hostSocketId: string, hostName: string, baseUrl: string): Room {
-    const code = this.generateRoomCode();
-    const room: Room = {
-      id: Date.now().toString(),
-      code,
-      hostId: hostSocketId,
-      players: [{
-        id: Date.now().toString(),
-        name: hostName,
-        socketId: hostSocketId,
-        score: 0,
-        role: 'host',
-        status: 'connected',
-        lastSeen: Date.now(),
-        page: 'room'
-      } as Player],
-      gameState: 'lobby',
-      createdAt: Date.now(),
-      url: `${baseUrl}/room/${code}`,
-      qrUrl: `${baseUrl}/api/qr/${code}`
-    };
-
-    this.rooms.set(code, room);
-    this.playerRooms.set(hostSocketId, code);
-    return room;
-  }
-
-  joinRoom(roomCode: string, playerSocketId: string, playerName: string, role: 'host' | 'player'): Room | null {
-    const room = this.rooms.get(roomCode.toUpperCase());
-    if (!room) return null;
-
-    // Исправляем типизацию параметра 'p'
-    const existingPlayer = room.players.find((p: Player) => 
-      p.name.toLowerCase() === playerName.toLowerCase()
-    );
-
-    if (existingPlayer) {
-      existingPlayer.socketId = playerSocketId;
-      existingPlayer.status = 'connected';
-      existingPlayer.lastSeen = Date.now();
-    } else {
-      room.players.push({
-        id: Date.now().toString(),
-        name: playerName,
-        socketId: playerSocketId,
-        score: 0,
-        role,
-        status: 'connected',
-        lastSeen: Date.now(),
-        page: 'room'
-      } as Player);
+  createRoom(hostSocketId: string, hostName: string): Room {
+    const code = this.generateRoomCode()
+    
+    const hostPlayer: Player = {
+      id: `player_${Date.now()}`,
+      socketId: hostSocketId,
+      name: hostName,
+      score: 0,
+      role: 'host',
+      status: 'connected',
+      isReady: true
     }
 
-    this.playerRooms.set(playerSocketId, roomCode);
-    return room;
+    const room: Room = {
+      id: `room_${Date.now()}`,
+      code,
+      hostId: hostSocketId,
+      players: [hostPlayer],
+      gameState: 'lobby',
+      maxPlayers: 10
+    }
+
+    this.rooms.set(code, room)
+    this.socketToRoom.set(hostSocketId, code)
+    
+    console.log(`🚪 Создана комната ${code} для ${hostName}`)
+    return room
+  }
+
+  joinRoom(roomCode: string, socketId: string, playerName: string): Room | null {
+    const room = this.rooms.get(roomCode.toUpperCase())
+    if (!room) return null
+
+    // Проверяем, нет ли игрока с таким именем
+    const existingPlayer = room.players.find(p => p.name === playerName)
+    if (existingPlayer) {
+      // Обновляем существующего игрока
+      existingPlayer.socketId = socketId
+      existingPlayer.status = 'connected'
+      return room
+    }
+
+    // Проверяем лимит игроков
+    if (room.players.length >= room.maxPlayers) {
+      return null
+    }
+
+    const newPlayer: Player = {
+      id: `player_${Date.now()}`,
+      socketId,
+      name: playerName,
+      score: 0,
+      role: 'player',
+      status: 'connected',
+      isReady: false
+    }
+
+    room.players.push(newPlayer)
+    this.socketToRoom.set(socketId, room.code)
+    
+    console.log(`👤 ${playerName} присоединился к ${room.code}`)
+    return room
   }
 
   getRoom(roomCode: string): Room | undefined {
-    return this.rooms.get(roomCode.toUpperCase());
+    return this.rooms.get(roomCode.toUpperCase())
   }
 
-  getAllRooms(): Room[] {
-    return Array.from(this.rooms.values());
+  findRoomBySocketId(socketId: string): Room | undefined {
+    const roomCode = this.socketToRoom.get(socketId)
+    return roomCode ? this.rooms.get(roomCode) : undefined
   }
 
-  cleanupOldRooms(maxAge: number = 30 * 60 * 1000): number {
-    const now = Date.now();
-    let removed = 0;
+  updatePlayerStatus(roomCode: string, socketId: string, status: Player['status']): boolean {
+    const room = this.getRoom(roomCode)
+    if (!room) return false
 
-    for (const [code, room] of this.rooms.entries()) {
-      if (now - room.createdAt > maxAge && room.players.length === 0) {
-        this.rooms.delete(code);
-        removed++;
-      }
+    const player = room.players.find(p => p.socketId === socketId)
+    if (player) {
+      player.status = status
+      return true
+    }
+    return false
+  }
+
+  removePlayer(socketId: string): boolean {
+    const roomCode = this.socketToRoom.get(socketId)
+    if (!roomCode) return false
+
+    const room = this.getRoom(roomCode)
+    if (!room) return false
+
+    const playerIndex = room.players.findIndex(p => p.socketId === socketId)
+    if (playerIndex === -1) return false
+
+    room.players.splice(playerIndex, 1)
+    this.socketToRoom.delete(socketId)
+
+    // Если комната пуста, удаляем её
+    if (room.players.length === 0) {
+      this.rooms.delete(room.code)
+      console.log(`🗑️ Комната ${room.code} удалена (пустая)`)
     }
 
-    return removed;
+    return true
+  }
+
+  getRoomCount(): number {
+    return this.rooms.size
   }
 
   private generateRoomCode(): string {
-    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    const numbers = '0123456789';
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    const numbers = '0123456789'
+    const mixed = letters + numbers
     
-    let code = '';
-    for (let i = 0; i < 3; i++) {
-      code += letters.charAt(Math.floor(Math.random() * letters.length));
+    let code = ''
+    for (let i = 0; i < 6; i++) {
+      code += mixed.charAt(Math.floor(Math.random() * mixed.length))
     }
-    code += '-';
-    for (let i = 0; i < 3; i++) {
-      code += numbers.charAt(Math.floor(Math.random() * numbers.length));
-    }
-    
-    return code;
+
+    return code.slice(0, 3) + '-' + code.slice(3, 6)
   }
 }

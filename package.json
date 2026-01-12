@@ -1,9 +1,1 @@
-{"name":"online-party-quiz","version":"1.0.0","private":true,"type":"module","engines":{"node":"^20.19.0 || >=22.12.0"},
-"scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "dev:server": "tsx server/test-server.ts",
-    "dev:server:watch": "tsx watch server/test-server.ts",
-    "type-check": "tsc --noEmit -p tsconfig.server.json"
-  },"dependencies":{"express":"^5.2.1","qrcode":"^1.5.4","qrcode-svg":"^1.1.0","socket.io":"^4.8.3","socket.io-client":"^4.8.3","uuid":"^13.0.0","vue":"^3.5.26","vue-router":"^4.6.4"},"devDependencies":{"@eslint/js":"^9.39.2","@types/express":"^5.0.6","@types/node":"^25.0.6","@types/socket.io":"^3.0.1","@vitejs/plugin-legacy":"^7.2.1","@vitejs/plugin-vue":"^6.0.3","@vue/tsconfig":"^0.8.1","eslint":"^9.39.2","eslint-plugin-vue":"~10.6.2","globals":"^17.0.0","pinia":"^3.0.4","ts-node":"^10.9.2","tsx":"^4.21.0","typescript":"^5.9.3","vite":"^7.3.0","vite-plugin-vue-devtools":"^8.0.5","vue-tsc":"^3.2.2"}}
+{"name":"online-party-quiz","version":"1.0.0","private":true,"type":"module","engines":{"node":"^20.19.0 || >=22.12.0"},"scripts":{"dev":"tsx server/index.ts","build":"vite build","start":"npm run build && NODE_ENV=production tsx server/index.ts","preview":"NODE_ENV=production tsx server/index.ts","game":"npm run build && npm run preview"},"dependencies":{"express":"^5.2.1","qrcode":"^1.5.4","qrcode-svg":"^1.1.0","socket.io":"^4.8.3","socket.io-client":"^4.8.3","uuid":"^13.0.0","vue":"^3.5.26","vue-router":"^4.6.4"},"devDependencies":{"@eslint/js":"^9.39.2","@types/express":"^5.0.6","@types/node":"^25.0.6","@types/socket.io":"^3.0.1","@vitejs/plugin-legacy":"^7.2.1","@vitejs/plugin-vue":"^6.0.3","@vue/tsconfig":"^0.8.1","eslint":"^9.39.2","eslint-plugin-vue":"~10.6.2","globals":"^17.0.0","pinia":"^3.0.4","ts-node":"^10.9.2","tsx":"^4.21.0","typescript":"^5.9.3","vite":"^7.3.0","vite-plugin-vue-devtools":"^8.0.5","vue-tsc":"^3.2.2"}}

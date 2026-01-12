@@ -1,143 +1,299 @@
 <template>
-  <div id="app">
-    <!-- Анимации перехода между страницами -->
-    <router-view v-slot="{ Component, route }">
-      <transition :name="route.meta.transition || 'fade'" mode="out-in">
-        <component :is="Component" />
-      </transition>
-    </router-view>
-    
-    <!-- Модальные окна или глобальные уведомления можно разместить здесь -->
-    <Notification v-if="showNotificationComponent" />
-  </div>
+    <div id="app">
+        <!-- Шапка -->
+        <header class="app-header">
+            <div class="header-content">
+                <h1>🐴 Horse Quiz</h1>
+                
+                <div v-if="user.name" class="user-info">
+                    <span>{{ user.displayName }}</span>
+                    <span v-if="user.isHost" class="host-badge">👑 Ведущий</span>
+                    <span v-if="room.code" class="room-code">{{ room.code }}</span>
+                    <span class="score">🏆 {{ user.score }}</span>
+                </div>
+                
+                <button v-if="user.isConnected" @click="disconnect" class="disconnect-btn">
+                    ❌ Отключиться
+                </button>
+            </div>
+        </header>
+
+        <!-- Основной контент -->
+        <main class="app-main">
+            <!-- Экран подключения -->
+            <div v-if="!user.isConnected" class="connect-screen">
+                <div class="connect-card">
+                    <h2>Подключение к серверу</h2>
+                    <input 
+                        v-model="serverUrl" 
+                        placeholder="URL сервера"
+                        class="server-input"
+                    >
+                    <button @click="connectToServer" class="connect-btn">
+                        🔗 Подключиться
+                    </button>
+                </div>
+            </div>
+
+            <!-- Экран входа -->
+            <div v-else-if="!user.name" class="login-screen">
+                <div class="login-card">
+                    <h2>Вход в игру</h2>
+                    <input 
+                        v-model="playerName" 
+                        placeholder="Ваше имя"
+                        @keyup.enter="enterGame"
+                        class="name-input"
+                    >
+                    
+                    <div class="login-actions">
+                        <button @click="createRoom" class="host-btn">
+                            🚪 Создать комнату
+                        </button>
+                        
+                        <div class="join-section">
+                            <input 
+                                v-model="roomCodeInput" 
+                                placeholder="Код комнаты"
+                                @keyup.enter="joinRoom"
+                                class="room-input"
+                            >
+                            <button @click="joinRoom" class="join-btn">
+                                👤 Присоединиться
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Лобби -->
+            <div v-else-if="room.gameState === 'lobby'" class="lobby-screen">
+                <LobbyView />
+            </div>
+
+            <!-- Игра -->
+            <div v-else class="game-screen">
+                <GameView />
+            </div>
+        </main>
+    </div>
 </template>
 
-<script>
-// Импорт компонента уведомлений (создайте позже)
-// import Notification from './components/Notification.vue'
+<script setup lang="ts">
+import { ref } from 'vue'
+import { useUserStore } from '@/modules/auth'
+import { useRoomStore } from '@/modules/room'
+import { useGameStore } from '@/modules/game'
+import { useSocket } from '@/modules/socket'
+import LobbyView from './views/LobbyView.vue'
+import GameView from './views/GameView.vue'
 
-export default {
-  name: 'App',
-  
-  // components: {
-  //   Notification
-  // },
-  
-  data() {
-    return {
-      showNotificationComponent: false
+// Инициализация хранилищ
+const user = useUserStore()
+const room = useRoomStore()
+const game = useGameStore()
+
+// Socket подключение
+const socket = useSocket()
+
+// Локальные состояния
+const serverUrl = ref('http://localhost:3000')
+const playerName = ref('')
+const roomCodeInput = ref('')
+
+// Функции
+const connectToServer = async () => {
+    try {
+        console.log('🔌 Подключение к серверу...')
+        await socket.connect()
+        console.log('✅ Подключение успешно')
+    } catch (error) {
+        console.error('❌ Ошибка подключения:', error)
+        if (error instanceof Error) {
+            alert(`Не удалось подключиться: ${error.message}`)
+        }
     }
-  },
-  
-  mounted() {
-    // Совместимость со старым кодом
-    window.VueApp = this;
+}
+
+const createRoom = async () => {
+    console.log('🎯 Начало создания комнаты...')
     
-    // Инициализация глобальных обработчиков
-    this.setupGlobalHandlers();
-  },
-  
-  methods: {
-    setupGlobalHandlers() {
-      // Глобальные обработчики для всех компонентов
-      window.addEventListener('offline', () => {
-        this.showNotification('Потеряно соединение с интернетом', 'error');
-      });
-      
-      window.addEventListener('online', () => {
-        this.showNotification('Соединение восстановлено', 'success');
-      });
-    },
-    
-    showNotification(message, type = 'info') {
-      // Метод для показа глобальных уведомлений
-      const event = new CustomEvent('show-notification', {
-        detail: { message, type }
-      });
-      window.dispatchEvent(event);
+    if (!playerName.value.trim()) {
+        alert('Введите ваше имя')
+        return
     }
-  }
+
+    try {
+        console.log('📞 Вызов socket.createRoom...')
+        const roomCode = await socket.createRoom(playerName.value.trim())
+        console.log('✅ Комната создана, код:', roomCode)
+        
+        if (roomCode) {
+            user.setUser({ name: playerName.value.trim(), role: 'host' })
+            console.log('👑 Пользователь установлен как host')
+        }
+    } catch (error) {
+        console.error('💥 Ошибка создания комнаты:', error)
+        if (error instanceof Error) {
+            alert(`Ошибка создания комнаты: ${error.message}`)
+        }
+    }
+}
+
+const joinRoom = async () => {
+    if (!playerName.value.trim()) {
+        alert('Введите ваше имя')
+        return
+    }
+
+    if (!roomCodeInput.value.trim()) {
+        alert('Введите код комнаты')
+        return
+    }
+
+    try {
+        await socket.joinRoom(roomCodeInput.value.trim(), playerName.value.trim())
+        user.setUser({ name: playerName.value.trim(), role: 'player' })
+    } catch (error) {
+        console.error('Ошибка входа в комнату:', error)
+        if (error instanceof Error) {
+            alert(`Ошибка входа в комнату: ${error.message}`)
+        }
+    }
+}
+
+const enterGame = () => {
+    if (roomCodeInput.value.trim()) {
+        joinRoom()
+    } else {
+        createRoom()
+    }
+}
+
+const disconnect = () => {
+    socket.disconnect()
+    user.reset()
+    room.reset()
 }
 </script>
 
-<style>
-/* Импорт существующих стилей */
-@import url('../public/css/styles.css');
-@import url('../public/css/game.css');
-
-/* Импорт шрифтов */
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Orbitron:wght@400;500;600;700;800&display=swap');
-
-/* Глобальные стили Vue */
+<style scoped>
 #app {
-  min-height: 100vh;
-  position: relative;
-  font-family: 'Montserrat', sans-serif;
-  background: linear-gradient(135deg, #1e1e2e 0%, #2d3436 100%);
-  color: #ecf0f1;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
 }
 
-/* Глобальные анимации */
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease;
+.app-header {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 1rem;
+    backdrop-filter: blur(10px);
 }
 
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
+.header-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-.slide-enter-active,
-.slide-leave-active {
-  transition: all 0.3s ease;
+.user-info {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
 }
 
-.slide-enter-from {
-  transform: translateX(100%);
-  opacity: 0;
+.host-badge, .room-code, .score {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.9rem;
 }
 
-.slide-leave-to {
-  transform: translateX(-100%);
-  opacity: 0;
+.connect-screen,
+.login-screen {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 80vh;
 }
 
-/* Глобальные утилитарные классы */
-.text-center {
-  text-align: center;
+.connect-card,
+.login-card {
+    background: rgba(255, 255, 255, 0.95);
+    color: #333;
+    padding: 2rem;
+    border-radius: 1rem;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
-.text-error {
-  color: #e74c3c;
+.server-input,
+.name-input,
+.room-input {
+    width: 100%;
+    padding: 0.75rem;
+    margin: 1rem 0;
+    border: 2px solid #ddd;
+    border-radius: 0.5rem;
+    font-size: 1rem;
 }
 
-.text-success {
-  color: #2ecc71;
+.connect-btn,
+.host-btn,
+.join-btn,
+.disconnect-btn {
+    width: 100%;
+    padding: 0.75rem;
+    margin: 0.5rem 0;
+    border: none;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.2s;
 }
 
-/* Адаптивные медиа-запросы */
-@media (max-width: 768px) {
-  .mobile-hidden {
-    display: none !important;
-  }
+.connect-btn {
+    background: #4CAF50;
+    color: white;
 }
 
-/* Общие стили для скроллбара */
-::-webkit-scrollbar {
-  width: 8px;
+.host-btn {
+    background: #2196F3;
+    color: white;
 }
 
-::-webkit-scrollbar-track {
-  background: rgba(30, 30, 46, 0.5);
+.join-btn {
+    background: #FF9800;
+    color: white;
 }
 
-::-webkit-scrollbar-thumb {
-  background: #3498db;
-  border-radius: 4px;
+.disconnect-btn {
+    background: #f44336;
+    color: white;
+    width: auto;
+    padding: 0.5rem 1rem;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #2980b9;
+button:hover {
+    transform: translateY(-2px);
+}
+
+.login-actions {
+    margin-top: 1.5rem;
+}
+
+.join-section {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.room-input {
+    flex: 1;
+    margin: 0;
 }
 </style>

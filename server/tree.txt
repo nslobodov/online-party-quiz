@@ -1,0 +1,26 @@
+server
+|   index.ts
+|   run.ts
+|   test-server.ts
+|   tree.txt
+|   tsconfig.server.json
+|   
++---models
+|       Room.ts
+|       
++---services
+|       GameService.ts
+|       RoomService.ts
+|       
++---socket
+|       handlers.ts
+|       
++---types
+|       game.types.ts
+|       room.types.ts
+|       socket.types.ts
+|       
+\---utils
+        codeGenerator.ts
+        qrGenerator.ts
+        

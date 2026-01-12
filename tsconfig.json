@@ -3,28 +3,32 @@
     "target": "ES2020",
     "module": "ESNext",
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "moduleResolution": "node",
-    "allowImportingTsExtensions": false,
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "noEmit": false,
+    "noEmit": true,
     "jsx": "preserve",
     "strict": true,
     "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
-      "@server/*": ["server/*"]
-    }
+      "@core/*": ["src/core/*"],
+      "@modules/*": ["src/modules/*"],
+      "@shared/*": ["src/shared/*"],
+      "@server/*": ["server/*"],
+    },
+    "types": ["node"]
   },
   "include": [
     "src/**/*.ts",
-    "src/**/*.d.ts",
+    "src/**/*.d.ts", 
     "src/**/*.tsx",
     "src/**/*.vue",
-    "server/**/*.ts"
+    "server/**/*.ts",
+    "shared/**/*.ts",
+    "env.d.ts"
   ],
   "exclude": ["node_modules", "dist"]
 }

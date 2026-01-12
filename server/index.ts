@@ -1,174 +1,158 @@
-import express from 'express';
-import http from 'http';
-import { Server } from 'socket.io';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { RoomService } from './services/RoomService';
-import { GameService } from './services/GameService';
-import { QuestionService } from './services/QuestionService';
-import { getLocalIP } from './utils/network';
-import { QRGenerator } from './utils/qrGenerator';
-import { setupSocketHandlers } from './socket';
+import express from 'express'
+import http from 'http'
+import { Server } from 'socket.io'
+import path from 'path'
+import { fileURLToPath } from 'url'
+import type { ViteDevServer } from 'vite'
+import os from 'os'
+import net from 'net'
+import { setupSocketHandlers } from './socket/handlers'
+import { RoomService } from './services/RoomService'
+import { GameService } from './services/GameService'
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
-class QuizServer {
-    private app: express.Application;
-    private server: http.Server;
-    private io: Server;
-    private roomService: RoomService;
-    private gameService: GameService;
-    private questionService: QuestionService;
-    private port: number;
-    private localIP: string;
+const app = express()
+const server = http.createServer(app)
+const io = new Server(server, { cors: { origin: "*" } })
 
-    constructor(port: number = 3000) {
-        this.port = port;
-        this.localIP = getLocalIP();
-        this.app = express();
-        this.server = http.createServer(this.app);
-        this.io = new Server(this.server, {
-            cors: {
-                origin: "*",
-                methods: ["GET", "POST"]
-            }
-        });
+const roomService = new RoomService()
+const gameService = new GameService(roomService)
 
-        this.roomService = new RoomService();
-        this.questionService = new QuestionService();
-        this.gameService = new GameService(this.roomService, this.questionService);
+console.log('🔧 Инициализация сервисов...')
+console.log('  - RoomService:', roomService ? '✓' : '✗')
+console.log('  - GameService:', gameService ? '✓' : '✗')
 
-        this.setupMiddleware();
-        this.setupRoutes();
-        this.setupSocket();
-        this.startCleanupInterval();
-    }
-
-    private setupMiddleware(): void {
-        this.app.use(express.json());
-        this.app.use(express.static(path.join(__dirname, '../../public')));
-        this.app.use('/images', express.static(path.join(__dirname, '../../public/images')));
-    }
-
-    private setupRoutes(): void {
-        // API для создания комнаты
-        this.app.post('/api/rooms/create', (req, res) => {
-            const { playerName } = req.body;
+function getLocalIP(): string {
+    const interfaces = os.networkInterfaces()
+    
+    for (const interfaceName in interfaces) {
+        const addresses = interfaces[interfaceName]
+        if (!addresses) continue
+        
+        // Пропускаем нежелательные интерфейсы
+        if (interfaceName.includes('docker') || 
+            interfaceName.includes('veth') || 
+            interfaceName.includes('br-')) {
+            continue
+        }
+        
+        for (const iface of addresses) {
+            // Используем type assertion для обхода проверки типов
+            const addr = iface as os.NetworkInterfaceInfo
             
-            if (!playerName || playerName.trim().length < 2) {
-                return res.status(400).json({ 
-                    success: false, 
-                    message: 'Имя должно быть минимум 2 символа' 
-                });
+            // Только IPv4 и не internal
+            if (addr.family === 'IPv4' && !addr.internal) {
+                return addr.address
             }
-
-            const room = this.roomService.createRoom(
-                req.ip, 
-                playerName.trim(), 
-                `http://${this.localIP}:${this.port}`
-            );
-
-            res.json({
-                success: true,
-                room: {
-                    code: room.code,
-                    url: room.url,
-                    qrUrl: room.qrUrl,
-                    hostName: playerName
-                }
-            });
-        });
-
-        // API для получения информации о комнате
-        this.app.get('/api/rooms/:code', (req, res) => {
-            const room = this.roomService.getRoom(req.params.code);
-            
-            if (!room) {
-                return res.status(404).json({ 
-                    success: false, 
-                    message: 'Комната не найдена' 
-                });
-            }
-
-            res.json({
-                success: true,
-                room: {
-                    code: room.code,
-                    players: room.players,
-                    playerCount: room.players.length,
-                    gameState: room.gameState,
-                    createdAt: room.createdAt
-                }
-            });
-        });
-
-        // API для QR кода
-        this.app.get('/api/qr/:code', (req, res) => {
-            const room = this.roomService.getRoom(req.params.code);
-            
-            if (!room) {
-                return res.status(404).send('Комната не найдена');
-            }
-
-            const qrSvg = QRGenerator.generateRoomQRCode(room.code, this.port);
-            
-            res.setHeader('Content-Type', 'image/svg+xml');
-            res.setHeader('Cache-Control', 'public, max-age=86400');
-            res.send(qrSvg);
-        });
-
-        // API для загрузки вопросов
-        this.app.get('/api/questions', async (req, res) => {
-            try {
-                const questions = await this.questionService.loadQuestions();
-                res.json({ success: true, questions });
-            } catch (error) {
-                console.error('Error loading questions:', error);
-                res.status(500).json({ 
-                    success: false, 
-                    message: 'Ошибка загрузки вопросов' 
-                });
-            }
-        });
-
-        // Для Vue Router - всегда отдаем index.html
-        this.app.get('*', (req, res) => {
-            res.sendFile(path.join(__dirname, '../../public/index.html'));
-        });
+        }
     }
-
-    private setupSocket(): void {
-        setupSocketHandlers(this.io, this.roomService, this.gameService);
-    }
-
-    private startCleanupInterval(): void {
-        // Очистка старых комнат каждые 5 минут
-        setInterval(() => {
-            const removed = this.roomService.cleanupOldRooms();
-            if (removed > 0) {
-                console.log(`🧹 Удалено ${removed} старых комнат`);
-            }
-        }, 5 * 60 * 1000);
-    }
-
-    public start(): void {
-        this.server.listen(this.port, () => {
-            console.log('=========================================');
-            console.log('🚀 Сервер запущен!');
-            console.log(`📡 Порт: ${this.port}`);
-            console.log(`💻 Для компьютера: http://localhost:${this.port}`);
-            console.log(`📱 Для мобильных: http://${this.localIP}:${this.port}`);
-            console.log('=========================================');
-            console.log('\n📌 Инструкция для подключения:');
-            console.log('1. Создайте комнату через веб-интерфейс');
-            console.log('2. Отсканируйте QR код с телефона');
-            console.log('3. Введите имя и присоединяйтесь к игре!');
-            console.log('=========================================');
-        });
-    }
+    
+    return 'localhost'
 }
 
-// Запуск сервера
-const server = new QuizServer(3000);
-server.start();
+// Альтернативный метод - проверка доступности через TCP
+async function getAvailableIPs() {
+    const interfaces = os.networkInterfaces()
+    const availableIPs = []
+    const portToTest = 3000 // или любой другой порт
+
+    for (const interfaceName in interfaces) {
+        const addresses = interfaces[interfaceName]
+        if (!addresses) continue
+
+        for (const iface of addresses) {
+            if (iface.family === 'IPv4' && !iface.internal) {
+                try {
+                    // Проверяем, можно ли привязаться к этому интерфейсу
+                    await new Promise((resolve, reject) => {
+                        const tester = net.createServer()
+                        tester.once('error', reject)
+                        tester.once('listening', () => {
+                            tester.close()
+                            resolve(null)
+                        })
+                        tester.listen(portToTest, iface.address)
+                    })
+                    
+                    availableIPs.push({
+                        address: iface.address,
+                        interface: interfaceName,
+                        mac: iface.mac
+                    })
+                } catch (error) {
+                    // Этот IP недоступен для использования
+                    console.debug(`IP ${iface.address} на интерфейсе ${interfaceName} недоступен`)
+                }
+            }
+        }
+    }
+
+    return availableIPs
+}
+
+async function createServer() {
+    let vite: ViteDevServer | null = null
+    
+    // В режиме разработки используем Vite middleware
+    if (process.env.NODE_ENV !== 'production') {
+        const { createServer: createViteServer } = await import('vite')
+        
+        vite = await createViteServer({
+            server: { middlewareMode: true },
+            appType: 'spa'
+        })
+        
+        app.use(vite.middlewares)
+        console.log('⚡ Vite dev server включен')
+    } else {
+        // В production - статические файлы
+        const clientDistPath = path.join(__dirname, '../dist/client')
+        app.use(express.static(clientDistPath))
+        console.log('📦 Serving production build')
+    }
+    
+    // Socket.IO логика
+    io.on('connection', (socket) => {
+        console.log('🔌 Client connected:', socket.id)
+        setupSocketHandlers(socket, io, roomService, gameService)
+    })
+    
+    // Для Vue Router в production
+    if (process.env.NODE_ENV === 'production') {
+        app.get('*', (req, res) => {
+            res.sendFile(path.join(__dirname, '../dist/client/index.html'))
+        })
+    }
+
+    const PORT = process.env.PORT || 3000
+    
+    server.listen(PORT, () => {
+        console.log('🚀 Сервер запущен!')
+        console.log(`🌐 Откройте: http://localhost:${PORT}`)
+        
+        // Получаем доступные IP
+        const localIP = getLocalIP()
+        console.log(`📱 Для телефона: http://${localIP}:${PORT}`)
+        
+        // Дополнительно показываем все доступные IP
+        const interfaces = os.networkInterfaces()
+        console.log('\n📡 Доступные сетевые интерфейсы:')
+        
+        for (const interfaceName in interfaces) {
+            const addresses = interfaces[interfaceName]
+            if (!addresses) continue
+            
+            console.log(`\n${interfaceName}:`)
+            addresses.forEach(iface => {
+                if (iface.family === 'IPv4') {
+                    const type = iface.internal ? 'Internal' : 'External'
+                    console.log(`  ${iface.address} (${type})`)
+                }
+            })
+        }
+    })
+}
+
+createServer().catch(console.error)
