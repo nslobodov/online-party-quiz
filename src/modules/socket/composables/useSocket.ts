@@ -108,43 +108,46 @@ export function useSocket() {
         })
     }
 
-    const createRoom = (playerName: string): Promise<string> => {
-        console.log('🎯 createRoom вызвана')
-        console.log('socket.value:', socket.value)
-        console.log('connected?:', socket.value?.connected)
-        
+    const createRoom = (): Promise<string> => {
         return new Promise((resolve, reject) => {
-            if (!socket.value) {
-                console.error('❌ Socket объект не существует')
-                reject(new Error('Socket не инициализирован'))
-                return
-            }
-            
-            if (!socket.value.connected) {
-                console.error('❌ Нет подключения к серверу')
+            if (!socket.value?.connected) {
                 reject(new Error('Нет подключения к серверу'))
                 return
             }
 
-            console.log('📤 Отправка события create-room для игрока:', playerName)
+            const controller = new AbortController()
+            const { signal } = controller
             
-            socket.value.emit('create-room', { playerName })
-            
-            socket.value.once('room-created', (data: { roomCode: string }) => {
-                console.log('✅ Ответ room-created:', data)
-                resolve(data.roomCode)
-            })
-
-            socket.value.once('error', (data: { message: string }) => {
-                console.error('❌ Ошибка от сервера:', data.message)
-                reject(new Error(data.message))
-            })
-
             // Таймаут
-            setTimeout(() => {
-                console.error('⏰ Таймаут ожидания ответа')
+            const timeoutId = setTimeout(() => {
+                controller.abort() // Прерываем операцию
                 reject(new Error('Сервер не ответил вовремя'))
             }, 5000)
+            
+            // Обработка прерывания
+            signal.addEventListener('abort', () => {
+                clearTimeout(timeoutId)
+                socket.value?.off('room-created')
+                socket.value?.off('error')
+            })
+            
+            // Отправка
+            socket.value.emit('create-room')
+            
+            // Успех
+            socket.value.once('room-created', (data: { roomCode: string }) => {
+                if (signal.aborted) return // Игнорируем если уже прервано
+                clearTimeout(timeoutId)
+                resolve(data.roomCode)
+            })
+            
+            // Ошибка
+            socket.value.once('error', (data: { message: string }) => {
+                if (signal.aborted) return
+                clearTimeout(timeoutId)
+                reject(new Error(data.message))
+            })
+            
         })
     }
 

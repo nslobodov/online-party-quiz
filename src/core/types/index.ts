@@ -39,7 +39,7 @@ export interface GameState {
 
 // Socket события клиента -> сервера
 export type ClientEvents = {
-    'create-room': (data: { playerName: string }) => void
+    'create-room': () => void
     'join-room': (data: { roomCode: string; playerName: string }) => void
     'start-game': (data: { roomCode: string }) => void
     'player-answer': (data: { answerIndex: number; questionNumber: number }) => void

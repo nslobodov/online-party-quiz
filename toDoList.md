@@ -1,4 +1,6 @@
 # How to make a project
+## Important (!)
+If you are going to write a code for this project, make tabs equal 4 spaces everywhere. Thank you for contributing.
 
 ## Desciption
 
@@ -24,16 +26,19 @@
 2. Frontend - vite + vue
 3. Working button "connect to server"
 4. Working button "create room" on another page
+5. Pinia added
+6. Some kind of module splitting
 
 ## Next steps
-1. Migrate to pinia
-2. Split into modules
+1. Make MVP
+2. Split into modules again
 3. Add tests
 4. === later (now now) ===
 5. Add database
 6. Add admin page
 
 ## Current structure
+tree.txt
 ```text
 online-party-quiz
 |   .env
@@ -55,6 +60,8 @@ online-party-quiz
 |   structure.txt
 |   text.txt
 |   toDoList.md
+|   tree.txt
+|   tsconfig.app.json
 |   tsconfig.json
 |   tsconfig.node.json
 |   tsconfig.server.json
@@ -63,33 +70,32 @@ online-party-quiz
 +---.husky
 |       pre-commit
 |       
-+---demo-project # Demo vue project created to take package.json
-|   
-|                       
++---demo-project
+|                
 +---ISSUE_TEMPLATE
 |       bug_report.md
 |       feature_request.md
 |       
-+---node_modules # A lot of things
-|  
-+---public                      # This folder for older version of project
++---node_modules
+|           
++---public
 |   |   game.html
-|   |   index.html              # For new project
+|   |   index.html
 |   |   index_was_working.html
-|   |   mobile-test.html        # For new project
+|   |   mobile-test.html
 |   |   room.html
-|   |   test-connection.html    # For new project
+|   |   test-connection.html
 |   |   
-|   +---css                     # Styles (mixed old and new)
+|   +---css
 |   |       game.css
 |   |       host.css
 |   |       styles.css
 |   |       
-|   +---images                  # Images for demo questions
+|   +---images
 |   |       horse02.jpg
 |   |       horse1.jpg
 |   |       
-|   \---js                      # For older version now unused
+|   \---js
 |           config.js
 |           game.js
 |           mini_script.js
@@ -106,6 +112,7 @@ online-party-quiz
 |   |   index.ts
 |   |   run.ts
 |   |   test-server.ts
+|   |   tree.txt
 |   |   tsconfig.server.json
 |   |   
 |   +---models
@@ -152,146 +159,91 @@ online-party-quiz
     |           IconTooling.vue
     |           
     +---composables
-    |       useSocket.ts
+    +---core
+    |   +---constants
+    |   +---types
+    |   |       index.ts
+    |   |       player.types.ts
+    |   |       
+    |   \---utils
+    +---modules
+    |   |   index.ts
+    |   |   
+    |   +---auth
+    |   |   |   index.ts
+    |   |   |   
+    |   |   +---components
+    |   |   +---composables
+    |   |   +---services
+    |   |   +---store
+    |   |   |       user.store.ts
+    |   |   |       
+    |   |   \---types
+    |   +---game
+    |   |   |   index.ts
+    |   |   |   
+    |   |   +---components
+    |   |   +---composables
+    |   |   +---services
+    |   |   +---store
+    |   |   |       game.store.ts
+    |   |   |       
+    |   |   +---types
+    |   |   \---utils
+    |   +---room
+    |   |   |   index.ts
+    |   |   |   
+    |   |   +---components
+    |   |   +---composables
+    |   |   +---services
+    |   |   +---store
+    |   |   |       room.store.ts
+    |   |   |       
+    |   |   +---types
+    |   |   \---utils
+    |   \---socket
+    |       |   index.ts
+    |       |   
+    |       +---composables
+    |       |       useSocket.ts
+    |       |       
+    |       +---handlers
+    |       +---services
+    |       \---types
+    +---plugins
+    |       pinia-ssr.ts
     |       
     +---router
     |       index.js
     |       
+    +---shared
+    |   \---components
+    |       +---game
+    |       +---room
+    |       \---ui
     +---stores
-    |       room.store.ts
-    |       user.store.ts
+    |       index.ts
     |       
     +---utils
     |       socket-manager.js
     |       
     \---views
-            GameView.vue
-            HomeView.vue
-            HostView.vue
+            GameView.vue    # Empty
+            HomeView.vue    
+            HostView.vue    # Empty
             LobbyView.vue
             RoomView.vue
 ```
 
 ## Target structure (approximately)
-```text
-online-party-quiz/
-├── src/
-│   ├── main.ts              # Точка входа с TypeScript
-│   ├── App.vue              # Корневой компонент
-│   ├── types/               # TypeScript типы
-│   │   ├── game.ts         # Типы игры
-│   │   ├── socket.ts       # Socket типы
-│   │   └── room.ts         # Типы комнат
-│   ├── api/                # API клиенты
-│   │   ├── socket.ts       # Socket service
-│   │   └── game.ts         # Game API service
-│   ├── composables/        # Vue composables
-│   │   ├── useSocket.ts    # Socket логика
-│   │   ├── useGame.ts      # Игровая логика
-│   │   └── useRoom.ts      # Логика комнат
-│   ├── components/         # Переиспользуемые компоненты
-│   │   ├── ui/            # Базовые UI компоненты
-│   │   │   ├── Button.vue
-│   │   │   ├── Input.vue
-│   │   │   ├── Card.vue
-│   │   │   └── Modal.vue
-│   │   ├── game/          # Игровые компоненты
-│   │   │   ├── QuestionCard.vue
-│   │   │   ├── Timer.vue
-│   │   │   ├── Leaderboard.vue
-│   │   │   └── AnswerOptions.vue
-│   │   └── room/          # Компоненты комнат
-│   │       ├── QRCodeDisplay.vue
-│   │       ├── PlayerList.vue
-│   │       └── RoomCode.vue
-│   ├── views/             # Страницы приложения
-│   │   ├── HomeView.vue   # Главная
-│   │   ├── CreateRoomView.vue # Создание комнаты
-│   │   ├── JoinRoomView.vue   # Присоединение
-│   │   ├── WaitingRoomView.vue # Ожидание
-│   │   ├── HostView.vue   # Панель ведущего
-│   │   ├── PlayerView.vue # Игровой экран
-│   │   └── ResultsView.vue # Результаты
-│   ├── stores/            # Pinia хранилища
-│   │   ├── game.store.ts
-│   │   ├── room.store.ts
-│   │   └── user.store.ts
-│   ├── utils/             # Утилиты
-│   │   ├── qr.ts         # Генерация QR
-│   │   ├── questions.ts  # Работа с вопросами
-│   │   ├── timer.ts      # Таймеры
-│   │   └── validation.ts # Валидация
-│   └── assets/           # Статические файлы
-│       ├── css/
-│       └── images/
-├── server/               # Серверная часть
-│   ├── index.ts         # Основной сервер
-│   ├── socket/          # Socket обработчики
-│   │   ├── game.handler.ts
-│   │   ├── room.handler.ts
-│   │   └── player.handler.ts
-│   ├── models/          # Модели данных
-│   │   ├── Room.ts
-│   │   ├── Player.ts
-│   │   └── Game.ts
-│   ├── services/        # Сервисы
-│   │   ├── QuestionService.ts
-│   │   ├── RoomService.ts
-│   │   └── GameService.ts
-│   └── utils/           # Серверные утилиты
-│       ├── codeGenerator.ts
-│       └── csvParser.ts
-├── public/              # Только статика
-│   └── index.html
-└── shared/              # Общий код для клиента и сервера
-    └── types.ts
-```
+???
 
 ## Instruments
 package.json
 ```json
-{"name":"online-party-quiz",
-"version":"1.0.0",
-"private":true,
-"type":"module",
-"engines":{
-    "node":"^20.19.0 || >=22.12.0"
-},"scripts":{
-    "dev": "tsx server/index.ts",
-    "build": "vite build",
-    "start": "npm run build && NODE_ENV=production tsx server/index.ts",
-    "preview": "NODE_ENV=production tsx server/index.ts",
-    "game": "npm run build && npm run preview"
-},"dependencies":{
-    "express":"^5.2.1",
-    "qrcode":"^1.5.4",
-    "qrcode-svg":"^1.1.0",
-    "socket.io":"^4.8.3",
-    "socket.io-client":"^4.8.3",
-    "uuid":"^13.0.0",
-    "vue":"^3.5.26",
-    "vue-router":"^4.6.4"
-},"devDependencies":{
-    "@eslint/js":"^9.39.2",
-    "@types/express":"^5.0.6",
-    "@types/node":"^25.0.6",
-    "@types/socket.io":"^3.0.1",
-    "@vitejs/plugin-legacy":"^7.2.1",
-    "@vitejs/plugin-vue":"^6.0.3",
-    "@vue/tsconfig":"^0.8.1",
-    "eslint":"^9.39.2",
-    "eslint-plugin-vue":"~10.6.2",
-    "globals":"^17.0.0",
-    "pinia":"^3.0.4",
-    "ts-node":"^10.9.2",
-    "tsx":"^4.21.0",
-    "typescript":"^5.9.3",
-    "vite":"^7.3.0",
-    "vite-plugin-vue-devtools":"^8.0.5",
-    "vue-tsc":"^3.2.2"
-}
-}
+{"name":"online-party-quiz","version":"1.0.0","private":true,"type":"module","engines":{"node":"^20.19.0 || >=22.12.0"},"scripts":{"dev":"tsx server/index.ts","build":"vite build","start":"npm run build && NODE_ENV=production tsx server/index.ts","preview":"NODE_ENV=production tsx server/index.ts","game":"npm run build && npm run preview"},"dependencies":{"express":"^5.2.1","qrcode":"^1.5.4","qrcode-svg":"^1.1.0","socket.io":"^4.8.3","socket.io-client":"^4.8.3","uuid":"^13.0.0","vue":"^3.5.26","vue-router":"^4.6.4"},"devDependencies":{"@eslint/js":"^9.39.2","@types/express":"^5.0.6","@types/node":"^25.0.6","@types/socket.io":"^3.0.1","@vitejs/plugin-legacy":"^7.2.1","@vitejs/plugin-vue":"^6.0.3","@vue/tsconfig":"^0.8.1","eslint":"^9.39.2","eslint-plugin-vue":"~10.6.2","globals":"^17.0.0","pinia":"^3.0.4","ts-node":"^10.9.2","tsx":"^4.21.0","typescript":"^5.9.3","vite":"^7.3.0","vite-plugin-vue-devtools":"^8.0.5","vue-tsc":"^3.2.2"}}
 ```
+
 ## Sample questions
 questions.csv
 ```csv
@@ -301,3 +253,6 @@ time_sec;question_text;correct_option;n_of_other_options;other_option1;other_opt
 30;Как называется мужская особь лошади?;Жеребец;3;Мерин;Конь;Скакун;;;1;10;/images/horse02.jpg
 20;Сколько зубов у взрослой лошади?;40;4;36;42;44;48;;1;8;/images/horse1.jpg
 ```
+
+## Secret features (think about them later)
+1. Secret names, which give you special bonuses in game. Example: if you enter name "Halfling" you will choose each time between only 2 options, not 4 or more like usual player.

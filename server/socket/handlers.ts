@@ -10,64 +10,57 @@ export function setupSocketHandlers(
     roomService: RoomService,
     gameService: GameService
 ) {
-    // В функции create-room:
-    socket.on('create-room', (data) => {
-    console.log('🎮 [СЕРВЕР] create-room получен от', socket.id)
-    console.log('📊 Данные:', data)
-    const { playerName } = data
-    
-    if (!playerName || playerName.trim().length < 2) {
-        socket.emit('error', { message: 'Имя должно быть минимум 2 символа' })
-        return
-    }
+    socket.on('create-room', () => {
+        console.log('🎮 [СЕРВЕР] create-room получен от', socket.id)
 
-    // Исправьте порядок параметров!
-    const room = roomService.createRoom(playerName.trim(), socket.id) // ← playerName первый!
-    socket.join(room.code)
-    
-    console.log('📤 [СЕРВЕР] Отправляю room-created...')
-    socket.emit('room-created', {
-        roomCode: room.code,
-        qrUrl: `/api/qr/${room.code}`
-    })
-    console.log('✅ [СЕРВЕР] room-created отправлен')
+        const room = roomService.createRoom(socket.id)
+        socket.join(room.code)
+        
+        console.log('📤 [СЕРВЕР] Отправляю room-created...')
+        socket.emit('room-created', {
+            roomCode: room.code,
+            qrUrl: `/api/qr/${room.code}`
+        })
+        console.log('✅ [СЕРВЕР] room-created отправлен')
 
-    socket.emit('players-updated', {
-        players: room.players
-    })
+        socket.emit('players-updated', {
+            players: room.players
+        })
 
-    console.log(`🎮 Комната создана: ${room.code} игроком ${playerName}`)
+        console.log(`🎮 Комната создана: ${room.code} игроком host_playerName`)
     })
 
     // Присоединение к комнате
     socket.on('join-room', (data) => {
-    const { roomCode, playerName } = data
-    
-    if (!playerName || playerName.trim().length < 2) {
-        socket.emit('error', { message: 'Имя должно быть минимум 2 символа' })
-        return
-    }
+        const { roomCode, playerName } = data
+        
+        console.log('👤 [СЕРВЕР] join-room получен:', {
+            roomCode,
+            playerName,
+            socketId: socket.id
+        })
+        
+        const room = roomService.joinRoom(roomCode, socket.id, playerName)
+        
+        if (!room) {
+            socket.emit('error', { message: 'Комната не найдена или переполнена' })
+            return
+        }
 
-    const room = roomService.joinRoom(roomCode, socket.id, playerName.trim())
-    
-    if (!room) {
-        socket.emit('error', { message: 'Комната не найдена или переполнена' })
-        return
-    }
+        socket.join(room.code)
+        
+        // Отправляем ответ игроку
+        socket.emit('room-joined', {
+            players: room.players,
+            isHost: room.hostId === socket.id
+        })
 
-    socket.join(room.code)
-    
-    socket.emit('room-joined', {
-        players: room.players,
-        isHost: room.hostId === socket.id
-    })
+        // Уведомляем всех в комнате
+        io.to(room.code).emit('players-updated', {
+            players: room.players
+        })
 
-    // Уведомляем всех в комнате
-    io.to(room.code).emit('players-updated', {
-        players: room.players
-    })
-
-    console.log(`👤 ${playerName} присоединился к ${room.code}`)
+        console.log(`✅ ${playerName} присоединился к ${room.code}`)
     })
 
     // Начало игры

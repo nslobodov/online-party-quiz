@@ -37,6 +37,11 @@ export const useRoomStore = defineStore('room', () => {
         currentGameState.value = state
     }
 
+    const setRoomCode = (newCode: string) => {
+        code.value = newCode
+        console.log('🔄 Код комнаты установлен:', code)
+    }
+
     const setQuestions = (newQuestions: Question[]) => {
         questions.value = newQuestions
     }
@@ -87,6 +92,7 @@ export const useRoomStore = defineStore('room', () => {
         setRoom,
         updatePlayers,
         setGameState,
+        setRoomCode,
         setQuestions,
         addPlayer,
         removePlayer,

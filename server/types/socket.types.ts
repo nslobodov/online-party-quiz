@@ -1,3 +1,6 @@
+import { Player } from "shared/types";
+import { TimerState } from "./game.types";
+
 export interface JoinRoomData {
   roomCode: string;
   playerName: string;
@@ -21,7 +24,7 @@ export interface GameControlData {
 
 // Socket события клиента
 export type ClientSocketEvents = {
-  'create-room': (data: CreateRoomData) => void;
+  'create-room': () => void;
   'join-room': (data: JoinRoomData) => void;
   'player-answer': (data: PlayerAnswerData) => void;
   'game-control': (data: GameControlData) => void;
