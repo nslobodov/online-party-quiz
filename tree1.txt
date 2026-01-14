@@ -1,0 +1,205 @@
+online-party-quiz
+|   .env
+|   .eslintrc.json
+|   .gitattributes
+|   .gitignore
+|   .prettierrc
+|   description.txt
+|   eslint.config.mjs
+|   index.html
+|   LICENSE
+|   mini_server.js
+|   package-lock.json
+|   package.json
+|   qrcode-simple.js
+|   questions.csv
+|   README.md
+|   simple-csv-loader.js
+|   structure.txt
+|   text.txt
+|   toDoList.md
+|   tree.txt
+|   tree1.txt
+|   tsconfig.app.json
+|   tsconfig.json
+|   tsconfig.node.json
+|   tsconfig.server.json
+|   vite.config.ts
+|   
++---.husky
+|       pre-commit
+|       
++---demo-project
+|  
++---ISSUE_TEMPLATE
+|       bug_report.md
+|       feature_request.md
+|       
++---node_modules
+|  
++---public
+|   |   game.html
+|   |   index.html
+|   |   index_1.html
+|   |   index_was_working.html
+|   |   mobile-test.html
+|   |   room.html
+|   |   test-connection.html
+|   |   
+|   +---css
+|   |       game.css
+|   |       host.css
+|   |       styles.css
+|   |       
+|   +---images
+|   |       horse02.jpg
+|   |       horse1.jpg
+|   |       
+|   \---js
+|           config.js
+|           game.js
+|           mini_script.js
+|           mobile-optimiser.js
+|           room.js
+|           socket-manager.js
+|           
++---screenshots
+|       host.png
+|       name.png
+|       question.png
+|       
++---server
+|   |   index.ts
+|   |   tree.txt
+|   |   tsconfig.server.json
+|   |   
+|   +---models
+|   |       Room.ts
+|   |       
+|   +---services
+|   |       GameService.ts
+|   |       RoomService.ts
+|   |       
+|   +---socket
+|   |   |   handlers_dont_use.ts
+|   |   |   
+|   |   \---handlers
+|   |           index.ts
+|   |           
+|   +---types
+|   |       game.types.ts
+|   |       room.types.ts
+|   |       socket.types.ts
+|   |       socket_new.types.ts
+|   |       
+|   \---utils
+|           codeGenerator.ts
+|           network.ts
+|           qrGenerator.ts
+|           serverNetwork.ts
+|           
++---shared
+|       types.ts
+|       
+\---src
+    |   App.vue
+    |   env.d.ts
+    |   main.ts
+    |   tsconfig.json
+    |   
+    +---assets
+    |       global.css
+    |       
+    +---components
+    |   |   HelloWorld.vue
+    |   |   TheWelcome.vue
+    |   |   WelcomeItem.vue
+    |   |   
+    |   \---icons
+    |           IconCommunity.vue
+    |           IconDocumentation.vue
+    |           IconEcosystem.vue
+    |           IconSupport.vue
+    |           IconTooling.vue
+    |           
+    +---composables
+    +---core
+    |   +---constants
+    |   +---types
+    |   |       app.types.ts
+    |   |       index.ts
+    |   |       player.types.ts
+    |   |       
+    |   \---utils
+    +---modules
+    |   |   index.ts
+    |   |   
+    |   +---auth
+    |   |   |   index.ts
+    |   |   |   
+    |   |   +---components
+    |   |   +---composables
+    |   |   +---services
+    |   |   +---store
+    |   |   |       user.store.ts
+    |   |   |       
+    |   |   \---types
+    |   +---game
+    |   |   |   index.ts
+    |   |   |   
+    |   |   +---components
+    |   |   +---composables
+    |   |   +---services
+    |   |   +---store
+    |   |   |       game.store.ts
+    |   |   |       
+    |   |   +---types
+    |   |   \---utils
+    |   +---room
+    |   |   |   index.ts
+    |   |   |   
+    |   |   +---components
+    |   |   +---composables
+    |   |   +---services
+    |   |   +---store
+    |   |   |       room.store.ts
+    |   |   |       
+    |   |   +---types
+    |   |   \---utils
+    |   \---socket
+    |       |   index.ts
+    |       |   
+    |       +---composables
+    |       |       useServerIp.ts
+    |       |       useSocket.ts
+    |       |       
+    |       +---handlers
+    |       |       index.ts
+    |       |       
+    |       +---services
+    |       \---types
+    |               socket.types.ts
+    |               
+    +---plugins
+    |       pinia-ssr.ts
+    |       
+    +---router
+    |       index.ts
+    |       
+    +---shared
+    +---stores
+    |       server.store.ts
+    |       
+    +---utils
+    |       clientNetwork.ts
+    |       socket-manager.js
+    |       
+    \---views
+            GameView.vue
+            HomeView.vue
+            HomeView_without_link.vue
+            HostView.vue
+            LobbyView.vue
+            PlayerView.vue
+            RoomView.vue
+            

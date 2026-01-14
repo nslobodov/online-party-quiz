@@ -1,158 +1,114 @@
+// server/index.ts
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 import express from 'express'
 import http from 'http'
 import { Server } from 'socket.io'
 import path from 'path'
 import { fileURLToPath } from 'url'
-import type { ViteDevServer } from 'vite'
+import { createServer as createViteServer } from 'vite'
 import os from 'os'
-import net from 'net'
-import { setupSocketHandlers } from './socket/handlers'
+import { registerSocketHandlers } from './socket/handlers/index'
 import { RoomService } from './services/RoomService'
 import { GameService } from './services/GameService'
+import type {
+    ServerEvents,
+    ClientEvents,
+    InterServerEvents,
+    SocketData
+} from './types/socket_new.types'
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
-
-const app = express()
-const server = http.createServer(app)
-const io = new Server(server, { cors: { origin: "*" } })
-
-const roomService = new RoomService()
-const gameService = new GameService(roomService)
-
-console.log('🔧 Инициализация сервисов...')
-console.log('  - RoomService:', roomService ? '✓' : '✗')
-console.log('  - GameService:', gameService ? '✓' : '✗')
-
-function getLocalIP(): string {
-    const interfaces = os.networkInterfaces()
-    
-    for (const interfaceName in interfaces) {
-        const addresses = interfaces[interfaceName]
-        if (!addresses) continue
-        
-        // Пропускаем нежелательные интерфейсы
-        if (interfaceName.includes('docker') || 
-            interfaceName.includes('veth') || 
-            interfaceName.includes('br-')) {
-            continue
-        }
-        
-        for (const iface of addresses) {
-            // Используем type assertion для обхода проверки типов
-            const addr = iface as os.NetworkInterfaceInfo
-            
-            // Только IPv4 и не internal
-            if (addr.family === 'IPv4' && !addr.internal) {
-                return addr.address
-            }
-        }
+async function startServer() {
+    const app = express()
+    const server = http.createServer(app)
+    const io = new Server<ClientEvents, ServerEvents, InterServerEvents, SocketData>(server, { 
+        cors: { 
+            origin: "*",
+            methods: ["GET", "POST"]
+        },
+        connectionStateRecovery: {
+        maxDisconnectionDuration: 2 * 60 * 1000, // 2 минуты
+        skipMiddlewares: true
     }
+    })
+
+    const roomService = new RoomService()
+    const gameService = new GameService(roomService)
     
-    return 'localhost'
-}
-
-// Альтернативный метод - проверка доступности через TCP
-async function getAvailableIPs() {
-    const interfaces = os.networkInterfaces()
-    const availableIPs = []
-    const portToTest = 3000 // или любой другой порт
-
-    for (const interfaceName in interfaces) {
-        const addresses = interfaces[interfaceName]
-        if (!addresses) continue
-
-        for (const iface of addresses) {
-            if (iface.family === 'IPv4' && !iface.internal) {
-                try {
-                    // Проверяем, можно ли привязаться к этому интерфейсу
-                    await new Promise((resolve, reject) => {
-                        const tester = net.createServer()
-                        tester.once('error', reject)
-                        tester.once('listening', () => {
-                            tester.close()
-                            resolve(null)
-                        })
-                        tester.listen(portToTest, iface.address)
-                    })
-                    
-                    availableIPs.push({
-                        address: iface.address,
-                        interface: interfaceName,
-                        mac: iface.mac
-                    })
-                } catch (error) {
-                    // Этот IP недоступен для использования
-                    console.debug(`IP ${iface.address} на интерфейсе ${interfaceName} недоступен`)
+    let vite: any = null
+    const PORT = process.env.PORT || 3000
+    const isProduction = process.env.NODE_ENV === 'production'
+    
+    // Получаем локальный IP
+    function getLocalIP(): string {
+        const interfaces = os.networkInterfaces()
+        for (const interfaceName in interfaces) {
+            const addresses = interfaces[interfaceName]
+            if (!addresses) continue
+            
+            for (const iface of addresses) {
+                const addr = iface as os.NetworkInterfaceInfo
+                if (addr.family === 'IPv4' && !addr.internal) {
+                    return addr.address
                 }
             }
         }
+        return 'localhost'
     }
-
-    return availableIPs
-}
-
-async function createServer() {
-    let vite: ViteDevServer | null = null
     
-    // В режиме разработки используем Vite middleware
-    if (process.env.NODE_ENV !== 'production') {
-        const { createServer: createViteServer } = await import('vite')
-        
+    const LOCAL_IP = getLocalIP()
+    
+    // ⭐ В режиме разработки используем Vite middleware
+    if (!isProduction) {
         vite = await createViteServer({
             server: { middlewareMode: true },
-            appType: 'spa'
+            appType: 'spa',
+            root: path.resolve(__dirname, '..')
         })
         
         app.use(vite.middlewares)
         console.log('⚡ Vite dev server включен')
     } else {
-        // В production - статические файлы
-        const clientDistPath = path.join(__dirname, '../dist/client')
-        app.use(express.static(clientDistPath))
-        console.log('📦 Serving production build')
+        // Production - статические файлы
+        const distPath = path.join(__dirname, '../dist')
+        app.use(express.static(distPath))
     }
     
-    // Socket.IO логика
-    io.on('connection', (socket) => {
-        console.log('🔌 Client connected:', socket.id)
-        setupSocketHandlers(socket, io, roomService, gameService)
+    // ⭐ API endpoint - должен быть ДО статики в production
+    app.get('/api/server-info', (req, res) => {
+        res.json({
+            ip: LOCAL_IP,
+            port: PORT,
+            timestamp: new Date().toISOString(),
+            success: true
+        })
     })
     
-    // Для Vue Router в production
-    if (process.env.NODE_ENV === 'production') {
+    // Socket.IO
+    io.on('connection', (socket) => {
+        console.log('🔌 Client connected:', socket.id)
+        registerSocketHandlers(socket, roomService)
+    })
+    
+    // В production: SPA fallback должен быть ПОСЛЕ всех API маршрутов
+    if (isProduction) {
         app.get('*', (req, res) => {
-            res.sendFile(path.join(__dirname, '../dist/client/index.html'))
+            res.sendFile(path.join(__dirname, '../dist/index.html'))
         })
     }
-
-    const PORT = process.env.PORT || 3000
     
     server.listen(PORT, () => {
         console.log('🚀 Сервер запущен!')
-        console.log(`🌐 Откройте: http://localhost:${PORT}`)
+        console.log(`🌐 Локальный: http://localhost:${PORT}`)
+        console.log(`📱 Сеть: http://${LOCAL_IP}:${PORT}`)
+        console.log(`🔗 API: http://localhost:${PORT}/api/server-info`)
         
-        // Получаем доступные IP
-        const localIP = getLocalIP()
-        console.log(`📱 Для телефона: http://${localIP}:${PORT}`)
-        
-        // Дополнительно показываем все доступные IP
-        const interfaces = os.networkInterfaces()
-        console.log('\n📡 Доступные сетевые интерфейсы:')
-        
-        for (const interfaceName in interfaces) {
-            const addresses = interfaces[interfaceName]
-            if (!addresses) continue
-            
-            console.log(`\n${interfaceName}:`)
-            addresses.forEach(iface => {
-                if (iface.family === 'IPv4') {
-                    const type = iface.internal ? 'Internal' : 'External'
-                    console.log(`  ${iface.address} (${type})`)
-                }
-            })
+        if (!isProduction) {
+            console.log(`⚡ Vite: http://localhost:5173`)
         }
     })
+    
+    return { app, server, io }
 }
 
-createServer().catch(console.error)
+startServer().catch(console.error)

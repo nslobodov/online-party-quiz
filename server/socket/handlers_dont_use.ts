@@ -2,11 +2,21 @@
 import { Socket, Server } from 'socket.io'
 import { RoomService } from '../services/RoomService.js'
 import { GameService } from '../services/GameService.js'
-import type { ClientEvents, ServerEvents } from '../../shared/types.js'
+import type { 
+    ServerEvents, 
+    ClientEvents,
+    Player,
+    GameState 
+} from '../../shared/types'
+import { getServerNetworkIP } from '../utils/serverNetwork'
+
+type ServerSocket = Socket<ClientEvents, ServerEvents>
+
+// Серверная функция получения IP
 
 export function setupSocketHandlers(
-    socket: Socket<ClientEvents, ServerEvents>,
-    io: Server,
+    io: Server<ClientEvents, ServerEvents>,
+    socket: ServerSocket,
     roomService: RoomService,
     gameService: GameService
 ) {
@@ -23,9 +33,6 @@ export function setupSocketHandlers(
         })
         console.log('✅ [СЕРВЕР] room-created отправлен')
 
-        socket.emit('players-updated', {
-            players: room.players
-        })
 
         console.log(`🎮 Комната создана: ${room.code} игроком host_playerName`)
     })
@@ -61,6 +68,20 @@ export function setupSocketHandlers(
         })
 
         console.log(`✅ ${playerName} присоединился к ${room.code}`)
+    })
+    socket.on('get-server-ip', (...args: any[]) => {
+        console.log('📡 Клиент запросил IP сервера:', socket.id)
+        
+        const serverIp = getServerNetworkIP()
+        const port = process.env.PORT ? parseInt(process.env.PORT) : 3000
+        
+        console.log(`🌐 Отправляю IP: ${serverIp}:${port}`)
+        
+        socket.emit('server-ip', {
+            ip: serverIp,
+            port: port
+        })
+        
     })
 
     // Начало игры
@@ -165,15 +186,15 @@ export function setupSocketHandlers(
     const room = roomService.findRoomBySocketId(socket.id)
     if (!room || room.hostId !== socket.id) return
 
-    gameService.pauseGame(room.code)
-    io.to(room.code).emit('game-paused')
+    // gameService.pauseGame(room.code)
+    // io.to(room.code).emit('game-paused')
     })
 
     socket.on('resume-game', () => {
     const room = roomService.findRoomBySocketId(socket.id)
     if (!room || room.hostId !== socket.id) return
 
-    gameService.resumeGame(room.code)
-    io.to(room.code).emit('game-resumed')
+    // gameService.resumeGame(room.code)
+    // io.to(room.code).emit('game-resumed')
     })
 }

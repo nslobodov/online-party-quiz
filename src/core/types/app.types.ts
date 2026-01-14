@@ -6,3 +6,4 @@ export type AppScreen =
     | 'lobby'        // Лобби комнаты
     | 'game'         // Игра
     | 'results'      // Результаты
+    | 'empty'

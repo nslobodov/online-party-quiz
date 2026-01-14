@@ -19,7 +19,7 @@ If you are going to write a code for this project, make tabs equal 4 spaces ever
 5. Экран финала игры - финальный лидерборд, карточка “вы набрали 1234 очков, вы на 4 месте”
 
 ### Как это должно работать с точки зрения системы
-Я не очень хорошо разбираюсь во всех способах реализации этого приложения, но вот часть особенностей как я то вижу (возможно неправильно). При нажатии кнопки создания комнаты создается объект “комната” где-то на компьютере со всей информацией о комнате и состояниях игроков. Важно чтобы у сервера был постоянный доступ к ней. Для комнаты генерируется уникальный код вида “ABC-123”. Отдельно генерируется qr-код. Одновременно с этим из csv файла определенной структуры, в котором одна строка содержит всю информацию об одном вопросе, загружаются вопросы. Варианты ответа для каждого перемешиваются и порядок вопросов тоже перемешивается, после чего вопросы становятся полностью доступными для сервера. По нажатию кнопки ведущим начинается игра с первой картинки (если она есть) для первого вопроса. Бэкенд синхронизирует все процессы, отвечает за таймер, отправляет вопросы, принимает ответы, начисляет баллы. Фронтенд только следит за нажатием кнопок и выполняет все что приходит от бэкенда. Должно быть что-то вроде SSR. Должно  использоваться Composition API.
+Я не очень хорошо разбираюсь во всех способах реализации этого приложения, но вот часть особенностей как я это вижу (возможно неправильно). При нажатии кнопки создания комнаты создается объект “комната” где-то на компьютере со всей информацией о комнате и состояниях игроков. Важно чтобы у сервера был постоянный доступ к ней. Для комнаты генерируется уникальный код вида “ABC-123”. Отдельно генерируется qr-код. Одновременно с этим из csv файла определенной структуры, в котором одна строка содержит всю информацию об одном вопросе, загружаются вопросы. Варианты ответа для каждого перемешиваются и порядок вопросов тоже перемешивается, после чего вопросы становятся полностью доступными для сервера. По нажатию кнопки ведущим начинается игра с первой картинки (если она есть) для первого вопроса. Бэкенд синхронизирует все процессы, отвечает за таймер, отправляет вопросы, принимает ответы, начисляет баллы. Фронтенд только следит за нажатием кнопок и выполняет все что приходит от бэкенда. Должно быть что-то вроде SSR. Должно  использоваться Composition API.
 
 ## Current state
 1. Backend typescript server
@@ -28,9 +28,15 @@ If you are going to write a code for this project, make tabs equal 4 spaces ever
 4. Working button "create room" on another page
 5. Pinia added
 6. Some kind of module splitting
+7. Can show local IP and room code on joining screen 
 
 ## Next steps
 1. Make MVP
+    1. Cleanup
+    2. Add callbacks instead of emits
+    3. Add QRcode generation
+    3. Make other pages
+    4. ???
 2. Split into modules again
 3. Add tests
 4. === later (now now) ===
@@ -50,17 +56,18 @@ online-party-quiz
 |   eslint.config.mjs
 |   index.html
 |   LICENSE
-|   mini_server.js          # Server for older version (now doesn't work)
+|   mini_server.js
 |   package-lock.json
 |   package.json
-|   qrcode-simple.js          # From older version
+|   qrcode-simple.js
 |   questions.csv
 |   README.md
-|   simple-csv-loader.js      # From older version
+|   simple-csv-loader.js
 |   structure.txt
 |   text.txt
 |   toDoList.md
 |   tree.txt
+|   tree1.txt
 |   tsconfig.app.json
 |   tsconfig.json
 |   tsconfig.node.json
@@ -71,16 +78,17 @@ online-party-quiz
 |       pre-commit
 |       
 +---demo-project
-|                
+|  
 +---ISSUE_TEMPLATE
 |       bug_report.md
 |       feature_request.md
 |       
 +---node_modules
-|           
+|  
 +---public
 |   |   game.html
 |   |   index.html
+|   |   index_1.html
 |   |   index_was_working.html
 |   |   mobile-test.html
 |   |   room.html
@@ -108,10 +116,8 @@ online-party-quiz
 |       name.png
 |       question.png
 |       
-+---server                  # Server part of project
++---server
 |   |   index.ts
-|   |   run.ts
-|   |   test-server.ts
 |   |   tree.txt
 |   |   tsconfig.server.json
 |   |   
@@ -123,16 +129,22 @@ online-party-quiz
 |   |       RoomService.ts
 |   |       
 |   +---socket
-|   |       handlers.ts
-|   |       
+|   |   |   handlers_dont_use.ts
+|   |   |   
+|   |   \---handlers
+|   |           index.ts
+|   |           
 |   +---types
 |   |       game.types.ts
 |   |       room.types.ts
 |   |       socket.types.ts
+|   |       socket_new.types.ts
 |   |       
 |   \---utils
 |           codeGenerator.ts
+|           network.ts
 |           qrGenerator.ts
+|           serverNetwork.ts
 |           
 +---shared
 |       types.ts
@@ -162,6 +174,7 @@ online-party-quiz
     +---core
     |   +---constants
     |   +---types
+    |   |       app.types.ts
     |   |       index.ts
     |   |       player.types.ts
     |   |       
@@ -205,34 +218,40 @@ online-party-quiz
     |       |   index.ts
     |       |   
     |       +---composables
+    |       |       useServerIp.ts
     |       |       useSocket.ts
     |       |       
     |       +---handlers
+    |       |       index.ts
+    |       |       
     |       +---services
     |       \---types
+    |               socket.types.ts
+    |               
     +---plugins
     |       pinia-ssr.ts
     |       
     +---router
-    |       index.js
-    |       
-    +---shared
-    |   \---components
-    |       +---game
-    |       +---room
-    |       \---ui
-    +---stores
     |       index.ts
     |       
+    +---shared
+    +---stores
+    |       server.store.ts
+    |       
     +---utils
+    |       clientNetwork.ts
     |       socket-manager.js
     |       
     \---views
-            GameView.vue    # Empty
-            HomeView.vue    
-            HostView.vue    # Empty
+            GameView.vue
+            HomeView.vue
+            HomeView_without_link.vue
+            HostView.vue
             LobbyView.vue
+            PlayerView.vue
             RoomView.vue
+            
+
 ```
 
 ## Target structure (approximately)

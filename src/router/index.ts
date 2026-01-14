@@ -13,7 +13,7 @@ const routes: RouteRecordRaw[] = [
     component: HomeView
   },
   {
-    path: '/player/:code',
+    path: '/player/:code?',
     name: 'player',
     component: PlayerView,
     props: true

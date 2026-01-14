@@ -3,16 +3,8 @@
         <!-- Шапка -->
         <header class="app-header">
             <div class="header-content">
-                <h1>🐴 Horse Quiz</h1>
-                
-                <!--div v-if="user.name" class="user-info">
-                    <span>{{ user.displayName }}</span>
-                    <span v-if="user.isHost" class="host-badge">👑 Ведущий</span>
-                    <span v-if="room.code" class="room-code">{{ room.code }}</span>
-                    <span class="score">🏆 {{ user.score }}</span>
-                </div-->
-                
-                <button v-if="user.isConnected" @click="disconnect" class="disconnect-btn">
+                <h1>🐴 Horse Quiz</h1>              
+                <button v-if="currentScreen !== 'connect'" @click="disconnect" class="disconnect-btn">
                     Отключиться
                 </button>
             </div>
@@ -40,7 +32,7 @@
                 <div class="login-card">
                     <h2>Вход в игру</h2>
                     <div class="login-actions">
-                        <button @click="createRoom" class="host-btn">
+                        <button @click="createRoomByClick" class="host-btn">
                             🚪 Создать комнату
                         </button>
                     </div>
@@ -49,183 +41,154 @@
 
             <!-- Экран входа в комнату -->
             <div v-else-if="currentScreen === 'roomCreated'" class="enter-screen">
-                <div class="action-buttons">
-                    <!-- Стилизуем ссылку как кнопку -->
-                    <a :href="hostUrl" target="_blank" class="action-btn host-btn">
-                        🎮 Управлять комнатой {{ room.code }}
-                    </a>
-                    
-                    <a :href="playerUrl" target="_blank" class="action-btn player-btn">
-                        👤 Войти как игрок в {{ room.code }}
-                    </a>
+                <div class="screen-content">
+                    <div class="action-buttons">
+                        <router-link :to="{ name: 'player', params: { code: roomCode } }" target="_blank" class="connect-btn action-btn">
+                            Войти в комнату {{ roomCode }} как игрок
+                        </router-link>
+                        <router-link :to="{ name: 'host', params: { code: roomCode } }" target="_blank" class="host-btn action-btn">
+                            Управлять комнатой {{ roomCode }}
+                        </router-link>
+                    </div>
+                    <div class="temp">
+                        Player link will be here: {{ serverInfo?.ip }}
+                    </div>
+                    <!--div class="qr-section">
+                        <div class="qr-container card" style="margin-bottom: 30px; text-align: center;">
+                            <h3 class="section-title"><i class="fas fa-qrcode"></i> QR-КОД ДЛЯ ПОДКЛЮЧЕНИЯ</h3>
+                            <div id="qr-code" style="margin: 20px auto; width: 200px; height: 200px; background-color: white;"></div>
+                            <div class="join-link-container" style="margin-top: 15px;">
+                                <div style="display: flex; gap: 10px;">
+                                    <input type="text" id="join-link" readonly 
+                                        style="flex: 1; padding: 10px; background: white; 
+                                                border: 1px solid #3498db; border-radius: 8px; color: #fff; font-size: 0.9rem;">
+                                    <button id="copy-link-btn" class="action-btn" style="color: white;">
+                                        <i class="fas fa-copy"></i> Копировать
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div-->
                 </div>
-                <div class="action-buttons">
-                    <!-- Тестовая ссылка -->
-                    <a :href="testPlayerUrl" target="_blank" @click="testPlayerLink">
-                    🧪 ТЕСТ: Открыть PlayerView
-                    </a>
-                </div>
-                <div class="action-buttons">
-                    <router-link :to="{ name: 'player', params: { code: roomCode } }" target="_blank">
-                        Player View
-                    </router-link>
-                </div>
+            </div>
+
+            <!-- Empty screen -->
+            <div v-else-if="currentScreen === 'empty'">
+                <h2>Congratulations! You have reached empty screen.</h2>
             </div>
         </main>
     </div>
 </template>
 
-<script setup lang="ts">
-import { ref } from 'vue'
-import { useUserStore } from '@/modules/auth'
-import { useRoomStore } from '@/modules/room'
-import { useGameStore } from '@/modules/game'
-import { useSocket } from '@/modules/socket'
-import LobbyView from './LobbyView.vue'
-import GameView from './GameView.vue'
-import { computed } from 'vue'
-import type { AppScreen } from '@/core/types/app.types'
+<script lang="ts">
+import { ref, onUnmounted } from 'vue'
+import { useSocket } from '@/modules/socket/composables/useSocket'
+import { useRoomStore } from '@/modules/room/store/room.store'
+import { useUserStore } from '@/modules/auth';
 
-let roomCode = 'ABC-123'
-const baseUrl = window.location.origin
+export default {
+    setup() {
+        const socket = useSocket()
+        const roomStore = useRoomStore()
+        const user = useUserStore()
 
-const hostUrl = computed(() => `${baseUrl}/host/${roomCode}`)
-const playerUrlWithCode = computed(() => {
-    const code = room.code
-    return `${window.location.origin}/player/${code}?code=${code}`
-})
+        // Состояния
+        const serverUrl = ref('http://localhost:3000')
+        const currentScreen = ref<'connect' | 'create' | 'roomCreated'>('connect')
+        const isConnecting = ref(false)
+        const serverInfo = ref<{ ip: string; port: number } | null>(null)
+        const roomCode = ref('')
+        const isCreatingRoom = ref(false)
 
-// Инициализация хранилищ
-const user = useUserStore()
-const room = useRoomStore()
-const game = useGameStore()
+        onUnmounted(() => {
+            console.log('🧹 Очистка HomeView')
+            socket.disconnect()
+        })
+        // Подключение к серверу
+        const connectToServer = async () => {
+            if (isConnecting.value) return
+            
+            isConnecting.value = true
+            console.log('🔌 Начинаю подключение к серверу...')
+            
+            try {
+                // 1. Подключаемся к серверу
+                await socket.connect()
+                console.log('[HomeView] Успешно подключено к серверу')
+                
+                // 2. ТОЛЬКО ПОСЛЕ ПОДКЛЮЧЕНИЯ получаем IP сервера
+                console.log('[HomeView] Запрашиваю IP сервера...')
+                const ipInfo = await socket.getServerIp()
+                
+                if (ipInfo) {
+                    serverInfo.value = ipInfo
+                    console.log(`[HomeView] Получен IP сервера: ${ipInfo.ip}:${ipInfo.port}`)
+                } else {
+                    console.warn('[HomeView] Не удалось получить IP сервера, использую localhost')
+                    serverInfo.value = { ip: 'localhost', port: 3000 }
+                }
+                
+                // 3. Переходим на экран создания комнаты
+                currentScreen.value = 'create'
 
-// Socket подключение
-const socket = useSocket()
-
-// Локальные состояния
-const serverUrl = ref('http://localhost:3000')
-const playerName = ref('')
-const roomCodeInput = ref('')
-
-const currentScreen = computed<AppScreen>(() => {
-  if (!user.isConnected) return 'connect'
-  if (!room.code) return 'create'
-  if (room.code) return 'roomCreated'
-  if (room.gameState === 'lobby') return 'lobby'
-  if (room.gameState === 'playing') return 'game'
-  if (room.gameState === 'finished') return 'results'
-  return 'create'
-})
-
-const playerUrl = computed(() => {
-  const code = room.code
-  return `${window.location.origin}/player/${code}` // Без порта - использует текущий (3000)
-})
-
-const testPlayerUrl = computed(() => {
-  const code = room.code
-  // Пробуем разные варианты:
-  
-  // Вариант 1: С query параметром
-  // return `${window.location.origin}/player?code=${code}`
-  
-  // Вариант 2: С hash
-  // return `${window.location.origin}/#/player/${code}`
-  
-  // Вариант 3: Прямой путь (ваш текущий)
-  return `${window.location.origin}/player/${code}`
-})
-
-const testPlayerLink = (e: Event) => {
-  e.preventDefault()
-  const code = room.code
-  
-  // Вариант 4: Открыть с полным перезапуском
-  const url = `${window.location.origin}/player/${code}`
-  
-  // Добавляем timestamp чтобы избежать кеширования
-  const uniqueUrl = `${url}?t=${Date.now()}`
-  
-  console.log('🔗 Открываю:', uniqueUrl)
-  window.open(uniqueUrl, '_blank')
-}
-
-// Функции
-const connectToServer = async () => {
-    try {
-        console.log('🔌 Подключение к серверу...')
-        await socket.connect()
-        console.log('✅ Подключение успешно')
-    } catch (error) {
-        console.error('❌ Ошибка подключения:', error)
-        if (error instanceof Error) {
-            alert(`Не удалось подключиться: ${error.message}`)
+                
+            } catch (error) {
+                console.error('[HomeView] Ошибка подключения:', error)
+                alert(`[HomeView] Не удалось подключиться: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`)
+            } finally {
+                isConnecting.value = false
+            }
         }
-    }
-}
-
-const createRoom = async () => {
-    console.log('🎯 Начало создания комнаты...')
-
-    try {
-        console.log('📞 Вызов socket.createRoom...')
-        roomCode = await socket.createRoom()
-        room.setRoomCode(roomCode)
-        console.log('✅ Комната создана, код:', roomCode)
         
-    } catch (error) {
-        console.error('💥 Ошибка создания комнаты:', error)
-        if (error instanceof Error) {
-            alert(`Ошибка создания комнаты: ${error.message}`)
+        // Создание комнаты (только после успешного подключения)
+        const createRoomByClick = async () => {
+            if (isCreatingRoom.value) {
+                console.log('⏳ Уже создаю комнату, ждите...')
+                return
+            }
+            
+            isCreatingRoom.value = true
+            console.log('[HomeView] Начинаю создание комнаты...')
+            
+            try {
+                const code = await socket.createRoom()
+                roomCode.value = code
+                roomStore.setRoomCode(code)
+                
+                console.log('[HomeView] Комната создана:', code)
+                currentScreen.value = 'roomCreated'
+                
+            } catch (error) {
+                console.error('❌ Ошибка создания комнаты:', error)
+                alert('Не удалось создать комнату')
+            } finally {
+                isCreatingRoom.value = false
+            }
+        }
+        
+        const disconnect = () => {
+            socket.disconnect()
+            user.reset()
+            roomStore.reset()
+            currentScreen.value = 'connect'
+        }
+
+        return {
+            serverUrl,
+            currentScreen,
+            isConnecting,
+            serverInfo,
+            roomCode,
+            connectToServer,
+            createRoomByClick,
+            disconnect
         }
     }
-}
-
-const joinRoom = async () => {
-    if (!playerName.value.trim()) {
-        alert('Введите ваше имя')
-        return
-    }
-
-    if (!roomCodeInput.value.trim()) {
-        alert('Введите код комнаты')
-        return
-    }
-
-    try {
-        await socket.joinRoom(roomCodeInput.value.trim(), playerName.value.trim())
-        user.setUser({ name: playerName.value.trim(), role: 'player' })
-    } catch (error) {
-        console.error('Ошибка входа в комнату:', error)
-        if (error instanceof Error) {
-            alert(`Ошибка входа в комнату: ${error.message}`)
-        }
-    }
-}
-
-const enterGame = () => {
-    if (roomCodeInput.value.trim()) {
-        joinRoom()
-    } else {
-        createRoom()
-    }
-}
-
-const disconnect = () => {
-    socket.disconnect()
-    user.reset()
-    room.reset()
 }
 </script>
 
-<style scoped>
-#app {
-    min-height: 100vh;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-}
 
+<style scoped>
 .app-header {
     background: rgba(0, 0, 0, 0.2);
     padding: 1rem;
@@ -260,6 +223,14 @@ const disconnect = () => {
     justify-content: center;
     align-items: center;
     min-height: 80vh;
+}
+
+.screen-content {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    gap: 1rem;
 }
 
 .connect-card,
@@ -365,4 +336,52 @@ button:hover {
   color: white;
 }
 
+/* QR code */
+.qr-section {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    border-radius: 1rem;
+
+}
+
+.qr-container {
+    max-width: 500px;
+    width: 100%;
+    text-align: center;
+    padding: 25px;
+    margin: 0 auto;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    /* border: 1px solid rgba(52, 152, 219, 0.3); */
+    /* background: linear-gradient(145deg, rgba(30, 30, 60, 0.9), rgba(20, 20, 40, 0.95)); */
+    border-radius: 1rem;
+}
+
+.qr-placeholder {
+    width: 200px;
+    height: 200px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px dashed rgba(52, 152, 219, 0.5);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    color: #3498db;
+    font-size: 14px;
+}
+
+#qr-code {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+}
+
+#qr-code img {
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+    border: 2px solid #3498db;
+}
 </style>

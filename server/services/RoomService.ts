@@ -1,4 +1,5 @@
 // server/services/RoomService.ts
+import { useSocket } from '@/modules/socket/composables/useSocket.js'
 import { Room, Player } from '../../shared/types.js'
 
 export class RoomService {
@@ -8,15 +9,15 @@ export class RoomService {
     createRoom(hostSocketId: string): Room {
         const code = this.generateRoomCode()
         
-        const hostPlayer: Player = {
-            id: `player_${Date.now()}`,
-            socketId: hostSocketId,
-            name: 'hostName',
-            score: 0,
-            role: 'host',
-            status: 'connected',
-            isReady: true
-        }
+        // const hostPlayer: Player = {
+        //     id: `player_${Date.now()}`,
+        //     socketId: hostSocketId,
+        //     name: 'hostName',
+        //     score: 0,
+        //     role: 'host',
+        //     status: 'connected',
+        //     isReady: true
+        // }
 
         const room: Room = {
             id: `room_${Date.now()}`,
@@ -29,8 +30,8 @@ export class RoomService {
 
         this.rooms.set(code, room)
         this.socketToRoom.set(hostSocketId, code)
-        
-        console.log(`🚪 Создана комната ${code} для ${'hostName'}`)
+        useSocket().emit('room-created', { roomCode: code })
+        console.log(`[RoomService] Создана комната ${code} для ${'hostName'}`)
         return room
     }
 
@@ -59,7 +60,8 @@ export class RoomService {
             score: 0,
             role: 'player',
             status: 'connected',
-            isReady: false
+            isReady: false,
+            hasAnswered: false
         }
 
         room.players.push(newPlayer)
@@ -124,12 +126,14 @@ export class RoomService {
         const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
         const numbers = '0123456789'
         const mixed = letters + numbers
+        let result = ''
         
         let code = ''
         for (let i = 0; i < 6; i++) {
             code += mixed.charAt(Math.floor(Math.random() * mixed.length))
         }
 
-        return code.slice(0, 3) + '-' + code.slice(3, 6)
+        result = code.slice(0, 3) + '-' + code.slice(3, 6)
+        return result
     }
 }

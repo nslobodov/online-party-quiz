@@ -46,11 +46,12 @@ export type ClientEvents = {
     'player-ready': (data: { isReady: boolean }) => void
     'pause-game': () => void
     'resume-game': () => void
+    'get-server-ip': () => void
 }
 
 // Socket события сервера -> клиента
 export type ServerEvents = {
-    'room-created': (data: { roomCode: string; qrUrl: string }) => void
+    'room-created': (data: { code: string}) => void
     'room-joined': (data: { players: Player[]; isHost: boolean }) => void
     'players-updated': (data: { players: Player[] }) => void
     'game-started': (data: { questions: Question[] }) => void
@@ -60,4 +61,5 @@ export type ServerEvents = {
     'game-ended': (data: { finalResults: Player[] }) => void
     'error': (data: { message: string }) => void
     'answer-result': (data: { correct: boolean; points: number }) => void
+    'server-ip': (data: { ip: string; port: number }) => void
 }
