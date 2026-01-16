@@ -30,7 +30,6 @@ export class RoomService {
 
         this.rooms.set(code, room)
         this.socketToRoom.set(hostSocketId, code)
-        useSocket().emit('room-created', { roomCode: code })
         console.log(`[RoomService] Создана комната ${code} для ${'hostName'}`)
         return room
     }
@@ -72,7 +71,7 @@ export class RoomService {
     }
 
     getRoom(roomCode: string): Room | undefined {
-        return this.rooms.get(roomCode.toUpperCase())
+        return this.rooms.get(roomCode)
     }
 
     findRoomBySocketId(socketId: string): Room | undefined {

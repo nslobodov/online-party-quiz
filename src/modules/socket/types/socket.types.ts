@@ -21,4 +21,5 @@ export interface SocketData {
     userId: string
     roomCode?: string
     isHost?: boolean
+    playerName?: string
 }

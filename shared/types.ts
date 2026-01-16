@@ -40,8 +40,8 @@ export interface GameState {
 
 // Socket события клиента -> сервера
 export type ClientEvents = {
-    'create-room': (data: { playerName: string }) => void
-    'join-room': (data: { roomCode: string; playerName: string }) => void
+    'create-room': (callback: (response: { code: string } | { error: string }) => void) => void
+    'join-room': (data: { code: string; name: string }, callback: (data: any) => void) => void
     'start-game': (data: { roomCode: string }) => void
     'player-answer': (data: { answerIndex: number; questionNumber: number }) => void
     'player-ready': (data: { isReady: boolean }) => void

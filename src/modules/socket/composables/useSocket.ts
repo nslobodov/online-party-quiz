@@ -1,5 +1,5 @@
 // src/modules/socket/composables/useSocket.ts
-import { ref, onScopeDispose, computed } from 'vue'
+import { ref, computed } from 'vue'
 import { io, type Socket } from 'socket.io-client'
 import { useUserStore } from '@/modules/auth'
 import { useRoomStore } from '@/modules/room'
@@ -11,58 +11,68 @@ export function useSocket() {
     const getUserStore = () => useUserStore()
     const getRoomStore = () => useRoomStore()
     const getGameStore = () => useGameStore()
-    let isCleanupRegistered = false
 
     const SERVER_URL = 'http://localhost:3000'
 
-    // Геттер для удобного доступа
     const isConnected = computed(() => socket.value?.connected || false)
     const socketId = computed(() => socket.value?.id || '')
 
-    const emit = <T = any>(event: any, data?: any, callback?: (response: T) => void): void => {
-        if (!socket.value?.connected) {
-            console.warn(`[src/modules/socket/composables/useSocket] Socket не подключен, событие "${event}" не отправлено`)
-            return
-        }
+    // const emit = <T = any>(event: any, data?: any, callback?: (response: T) => void): void => {
+    //     if (!socket.value?.connected) {
+    //         console.warn(`[src/modules/socket/composables/useSocket] Socket не подключен, событие "${event}" не отправлено`)
+    //         return
+    //     }
         
-        if (callback) {
-            socket.value.emit(event, data, callback)
-        } else {
-            socket.value.emit(event, data)
-        }
-    }
+    //     if (callback) {
+    //         socket.value.emit(event, data, callback)
+    //     } else {
+    //         socket.value.emit(event, data)
+    //     }
+    // }
 
 
     const connect = async (): Promise<void> => {
-        const user = getUserStore()
         return new Promise((resolve, reject) => {
-            console.log('🔄 Попытка подключения к:', SERVER_URL)
+            console.log('🔄 [connect] Попытка подключения к:', SERVER_URL)
             
+            // Если уже есть активное соединение, используем его
             if (socket.value?.connected) {
-                console.log('✅ Уже подключено, повторное подключение не нужно')
+                console.log('✅ [connect] Уже подключено')
                 resolve()
                 return
             }
-
+            
             socket.value = io(SERVER_URL, {
                 autoConnect: true,
                 reconnection: true,
                 reconnectionAttempts: 5,
-                reconnectionDelay: 1000
+                reconnectionDelay: 1000,
+                timeout: 10000 // Таймаут подключения
             })
 
             socket.value.on('connect', () => {
-                console.log('[src/modules/socket/composables/useSocket] Подключено к серверу. ID:', socket.value?.id)
-                user.isConnected = true
-                user.socketId = socket.value?.id || ''
+                console.log('✅ [connect] Подключено к серверу. ID:', socket.value?.id)
+                
+                const userStore = getUserStore()
+                userStore.isConnected = true
+                userStore.socketId = socket.value?.id || ''
                 resolve()
             })
 
             socket.value.on('connect_error', (error: Error) => {
-                console.error('[src/modules/socket/composables/useSocket] Ошибка подключения:', error)
-                user.isConnected = false
-                reject(error)
+                console.error('❌ [connect] Ошибка подключения:', error)
+                const userStore = getUserStore()
+                userStore.isConnected = false
+                reject(new Error(`Ошибка подключения: ${error.message}`))
             })
+
+            // Добавляем таймаут
+            setTimeout(() => {
+                if (!socket.value?.connected) {
+                    console.error('⏰ [connect] Таймаут подключения')
+                    reject(new Error('Таймаут подключения к серверу'))
+                }
+            }, 15000)
 
             setupEventListeners()
         })
@@ -70,15 +80,15 @@ export function useSocket() {
 
     const setupEventListeners = () => {
         if (!socket.value) {
-            console.error('❌ Socket не инициализирован при setupEventListeners')
+            console.error('[useSocket] Socket не инициализирован при setupEventListeners')
             return
         }
 
-        console.log('[src/modules/socket/composables/useSocket -> setupEventListeners] Настройка обработчиков событий...')
+        console.log('[useSocket -> setupEventListeners] Настройка обработчиков событий...')
 
-        socket.value.on('room-created', (data: { code: string}) => {
-            console.log('[src/modules/socket/composables/useSocket] Комната создана:', data.code)
-        })
+        // socket.value.on('room-created', (data: { code: string}) => {
+        //     console.log('[src/modules/socket/composables/useSocket] Комната создана:', data.code)
+        // })
         /*
         socket.value.on('room-joined', (data: { players: Player[]; isHost: boolean }) => {
             console.log('👤 Присоединились к комнате, isHost:', data.isHost)
@@ -122,12 +132,12 @@ export function useSocket() {
             game.setScreen('final')
             room.gameState = 'finished'
         })
-        */
+        
 
         socket.value.on('error', (data: { message: string }) => {
             console.error('[useSocket] Сообщение об ошибке от сервера:', data.message)
         })
-        
+        */
         socket.value.once('server-ip', (data: { ip: string; port: number }) => {
             const room = getRoomStore()
             console.log('[src/modules/socket/composables/useSocket] Получен IP сервера:', data.ip, data.port)
@@ -140,90 +150,102 @@ export function useSocket() {
 
     const createRoom = (): Promise<string> => {
         return new Promise((resolve, reject) => {
-            console.log('🔄 [createRoom] Начало, socket состояние:', {
-                exists: !!socket.value,
-                connected: socket.value?.connected,
-                id: socket.value?.id
-            })
-
+            console.log('🔄 [createRoom] Начало')
+            
             if (!socket.value?.connected) {
-                console.error('❌ [createRoom] Socket не подключен')
+                console.error('❌ Socket не подключен')
                 reject(new Error('Нет подключения к серверу'))
                 return
             }
 
-            console.log('📤 [createRoom] Отправляю create-room')
+            console.log('📤 [createRoom] Отправляю create-room с callback')
             
             const timeoutId = setTimeout(() => {
-                console.error('⏰ [createRoom] Таймаут 10 секунд')
-                console.log('Состояние socket при таймауте:', {
-                    exists: !!socket.value,
-                    connected: socket.value?.connected,
-                    id: socket.value?.id
-                })
+                console.error('⏰ [createRoom] Таймаут 10 секунд - сервер не ответил')
                 reject(new Error('Сервер не ответил вовремя'))
             }, 10000)
             
-            // Сохраняем текущий socket для безопасности
-            const currentSocket = socket.value
-            
-            const handleRoomCreated = (data: { code: string }) => {
-                console.log('📥 [createRoom] Получен room-created:', data)
-                console.log('Socket при получении:', {
-                    currentSocketId: currentSocket.id,
-                    socketValueId: socket.value?.id
-                })
+            // Используем только callback
+            socket.value.emit('create-room', (response: { code?: string; error?: string }) => {
                 clearTimeout(timeoutId)
+                console.log('📥 [createRoom] Получен ответ через callback:', response)
                 
-                // Отписываемся от обработчиков
-                currentSocket.off('room-created', handleRoomCreated)
-                currentSocket.off('error', handleError)
-                
-                if (data && data.code) {
-                    resolve(data.code)
+                if (response && response.code) {
+                    console.log('✅ [createRoom] Код комнаты:', response.code)
+                    resolve(response.code)
+                } else if (response && response.error) {
+                    console.error('❌ [createRoom] Ошибка от сервера:', response.error)
+                    reject(new Error(response.error))
                 } else {
-                    reject(new Error('Нет кода комнаты в ответе'))
+                    console.error('❌ [createRoom] Неверный формат ответа:', response)
+                    reject(new Error('Неверный ответ от сервера'))
                 }
-            }
+            })
             
-            const handleError = (data: { message: string }) => {
-                console.error('❌ [createRoom] Ошибка от сервера:', data)
-                clearTimeout(timeoutId)
-                currentSocket.off('room-created', handleRoomCreated)
-                currentSocket.off('error', handleError)
-                reject(new Error(data.message || 'Ошибка создания комнаты'))
-            }
-            
-            currentSocket.once('room-created', handleRoomCreated)
-            currentSocket.once('error', handleError)
-            
-            // Отправляем запрос
-            currentSocket.emit('create-room')
             console.log('✅ [createRoom] Запрос отправлен')
-
         })
     }
-    /*
-    const joinRoom = (roomCode: string, playerName: string): Promise<void> => {
+    
+    const joinRoom = (roomCode: string, playerName: string): Promise<{ players: Player[]; isHost: boolean }> => {
         return new Promise((resolve, reject) => {
             if (!socket.value?.connected) {
-                reject(new Error('Нет подключения к серверу'))
+                reject(new Error('Socket не подключен'))
                 return
             }
 
-            room.code = roomCode.toUpperCase()
-            socket.value.emit('join-room', { roomCode, playerName })
-            
-            socket.value.once('room-joined', () => {
-                resolve()
-            })
+            const timeoutId = setTimeout(() => {
+                reject(new Error('Таймаут подключения к комнате'))
+            }, 10000)
 
-            socket.value.once('error', (data: { message: string }) => {
-                reject(new Error(data.message))
-            })
+            // Отправляем запрос с данными и callback
+            socket.value.emit(
+                'join-room',
+                {
+                    code: roomCode.toUpperCase(),
+                    name: playerName.trim()
+                    // timestamp: Date.now(),
+                    // userAgent: navigator.userAgent
+                },
+                (response: any) => {
+                    clearTimeout(timeoutId)
+                    
+                    if (!response) {
+                        reject(new Error('Пустой ответ от сервера'))
+                        return
+                    }
+                    
+                    if (response.success === true) {
+                        // Успех
+                        const userStore = getUserStore()
+                        const roomStore = getRoomStore()
+                        
+                        userStore.name = playerName
+                        userStore.role = response.isHost === true?'host':'player'
+                        userStore.roomCode = roomCode
+                        
+                        roomStore.code = roomCode
+                        roomStore.updatePlayers(response.players || [])
+                        roomStore.gameState = response.roomState || 'lobby'
+                        
+                        resolve({
+                            players: response.players || [],
+                            isHost: response.isHost || false
+                        })
+                    } else {
+                        // Ошибка
+                        reject(new Error(response.error || 'Неизвестная ошибка'))
+                    }
+                }
+            )
+
+            // Также подписываемся на событие на всякий случай
+            // socket.value.once('room:joined', (eventData: any) => {
+            //     clearTimeout(timeoutId)
+            //     // Обработка события
+            // })
         })
     }
-
+    /*
     const startGame = (): Promise<void> => {
         return new Promise((resolve, reject) => {
             if (!socket.value?.connected || !user.isHost) {
@@ -270,29 +292,50 @@ export function useSocket() {
     */
     const getServerIp = (): Promise<{ip: string; port: number}> => {
         return new Promise((resolve, reject) => {
-            if (!socket.value?.connected) {
-                reject(new Error('[useSocket] Нет подключения к серверу'))
+            console.log('[useSocket] getServerIp вызван, проверяю подключение...')
+            
+            // Проверяем подключение
+            if (!socket.value) {
+                console.error('[useSocket] Socket не инициализирован')
+                reject(new Error('Socket не инициализирован'))
+                return
+            }
+
+            if (!socket.value.connected) {
+                console.error('[useSocket] Socket не подключен, текущий статус:', socket.value.connected)
+                reject(new Error('Нет подключения к серверу. Подключитесь сначала.'))
                 return
             }
 
             console.log('[useSocket] Запрашиваю IP сервера...')
             
             const timeoutId = setTimeout(() => {
-                console.warn('[useSocket -> getServerIp] Таймаут получения IP сервера')
-                reject(new Error('[useSocket] Сервер не ответил вовремя'))
-            }, 5000)
+                console.warn('[useSocket] Таймаут получения IP сервера')
+                reject(new Error('Сервер не ответил вовремя'))
+            }, 10000) // Увеличиваем таймаут до 10 секунд
             
+            // Обработка через событие (основной способ)
             const handleServerIp = (data: { ip: string; port: number }) => {
                 clearTimeout(timeoutId)
-                console.log('[useSocket -> handleServerIp] Получен IP через событие:', data)
+                console.log('[useSocket] Получен IP через событие:', data)
                 socket.value?.off('server-ip', handleServerIp) // Убираем обработчик
                 resolve(data)
             }
             
+            // Обработка через callback (альтернативный способ)
+            const handleCallback = (response: { ip: string; port: number }) => {
+                clearTimeout(timeoutId)
+                console.log('[useSocket] Получен IP через callback:', response)
+                socket.value?.off('server-ip', handleServerIp) // На всякий случай отписываемся от события
+                resolve(response)
+            }
+            
+            // Подписываемся на событие
             socket.value.once('server-ip', handleServerIp)
             
-            console.log('[useSocket -> getServerIp] Отправляю запрос get-server-ip...')
-            socket.value.emit('get-server-ip')
+            // Отправляем запрос с callback
+            console.log('[useSocket] Отправляю get-server-ip с callback...')
+            socket.value.emit('get-server-ip', handleCallback)
             
         })
     }
@@ -313,11 +356,10 @@ export function useSocket() {
         socket,
         isConnected,
         socketId,
-        emit,
         connect,
         disconnect,
         createRoom,
-        // joinRoom,
+        joinRoom,
         // startGame,
         // submitAnswer,
         // pauseGame,

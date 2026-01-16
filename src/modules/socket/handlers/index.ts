@@ -25,38 +25,65 @@ export function registerSocketHandlers(
             if (callback) {
                 callback(response)
             } else {
+                console.log('[src/modules/socket/handlers/index] No callback found, add callback')
                 // Если callback не передан, отправляем через emit
-                socket.emit('server-ip', response)
+                // socket.emit('server-ip', response)
             }
             
         } catch (error) {
             console.error('Ошибка получения IP сервера:', error)
-            if (callback) {
-                callback({ 
-                    ip: 'localhost', 
-                    port: process.env.PORT ? parseInt(process.env.PORT) : 3000 
-                })
-            }
+            // if (callback) {
+            //     callback({ 
+            //         ip: 'localhost', 
+            //         port: process.env.PORT ? parseInt(process.env.PORT) : 3000 
+            //     })
+            // }
         }
     })
     
     // Создание комнаты
-    socket.on('create-room', () => {
+    socket.on('create-room', (callback?: (response: { code: string } | { error: string }) => void) => {
+        console.log('🎮 create-room получен от', socket.id)
+        console.log('🎯 Callback type:', typeof callback)
+        
         try {
-            console.log('[src/modules/socket/handlers/index] Клиент создает комнату')
+            if (!socket.connected) {
+                console.error('⚠️ Socket уже отключен')
+                if (typeof callback === 'function') {
+                    callback({ error: 'Соединение прервано' })
+                }
+                return
+            }
             
-            const roomCode = roomService.createRoom(socket.id).code
-            socket.data.roomCode = roomCode
-            socket.data.isHost = true
+            console.log('🎯 RoomService создает комнату')
+            const room = roomService.createRoom(socket.id)
+            const roomCode = room.code
             
-            socket.join(roomCode)
-            
-            // callback({ code: roomCode })
             console.log(`✅ Комната создана: ${roomCode}`)
+            
+            // Проверяем, что callback - это функция
+            if (typeof callback === 'function') {
+                console.log('📤 Отправляю ответ через callback')
+                callback({ code: roomCode })
+            } else {
+                console.warn('⚠️ Callback не предоставлен или не является функцией')
+                // Отправляем через emit для обратной совместимости
+                // socket.emit('room-created', { code: roomCode })
+            }
             
         } catch (error) {
             console.error('❌ Ошибка создания комнаты:', error)
-            // callback({ error: 'Не удалось создать комнату' })
+            
+            if (typeof callback === 'function') {
+                callback({ 
+                    error: `Не удалось создать комнату: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}` 
+                })
+            } else {
+                // socket.emit('error', { 
+                //     message: 'Не удалось создать комнату' 
+                // })
+                console.log('[src/modules/socket/handlers/index] Не удалось создать комнату')
+            }
         }
     })
     

@@ -39,14 +39,17 @@ export interface GameState {
 
 // Socket события клиента -> сервера
 export type ClientEvents = {
-    'create-room': () => void
-    'join-room': (data: { roomCode: string; playerName: string }) => void
+    'create-room': (callback: (response: { code: string } | { error: string }) => void) => void
+    'join-room': (data: { code: string; name: string }, callback: (data: any) => void) => void
     'start-game': (data: { roomCode: string }) => void
     'player-answer': (data: { answerIndex: number; questionNumber: number }) => void
     'player-ready': (data: { isReady: boolean }) => void
     'pause-game': () => void
     'resume-game': () => void
-    'get-server-ip': () => void
+    'get-server-ip': (callback: (data: { ip: string; port: number }) => void) => void
+    'error': () => void
+    'room:get-state': (data: any, callback: (data: any) => void) => void
+
 }
 
 // Socket события сервера -> клиента
@@ -62,4 +65,7 @@ export type ServerEvents = {
     'error': (data: { message: string }) => void
     'answer-result': (data: { correct: boolean; points: number }) => void
     'server-ip': (data: { ip: string; port: number }) => void
+    'room:players-updated': (data: { players: Player[] }) => void
+    'room:player-joined': (data: { player: Player }) => void
+    'room:player-left': (data: { playerId: string }) => void
 }

@@ -29,14 +29,20 @@ If you are going to write a code for this project, make tabs equal 4 spaces ever
 5. Pinia added
 6. Some kind of module splitting
 7. Can show local IP and room code on joining screen 
+8. QR code working
 
 ## Next steps
 1. Make MVP
-    1. Cleanup
-    2. Add callbacks instead of emits
-    3. Add QRcode generation
-    3. Make other pages
-    4. ???
+    1. Before making page with game
+        1. Сохранение подключения к комнате при перезагрузке страницы ввода имени на экране ввода имени
+        2. Сохранение имени и подключения к комнате при перезагрузке страницы ввода имени с экраном ожидания
+        3. Работающая кнопка «начать игру» на странице ведущего которая синхронно переключает страницу с экраном ожидания игроков на страницу с игрой
+        4. После начала игры игрок может подключиться просканировав qr код и введя имя на странице. В таком случае на экране ввода имени кнопка подключения ведет не на экран ожидания а на игру сразу 
+        5. Сохранение состояний при перезагрузке страницы ведущего
+        6. Отдельная страница для игры - пока что заглушка
+        7. Проверить что шаги до страницы игры включительно работают на телефоне 
+    2. Make game
+
 2. Split into modules again
 3. Add tests
 4. === later (now now) ===
@@ -44,7 +50,6 @@ If you are going to write a code for this project, make tabs equal 4 spaces ever
 6. Add admin page
 
 ## Current structure
-tree.txt
 ```text
 online-party-quiz
 |   .env
@@ -52,22 +57,15 @@ online-party-quiz
 |   .gitattributes
 |   .gitignore
 |   .prettierrc
-|   description.txt
 |   eslint.config.mjs
 |   index.html
 |   LICENSE
-|   mini_server.js
 |   package-lock.json
 |   package.json
-|   qrcode-simple.js
 |   questions.csv
 |   README.md
-|   simple-csv-loader.js
-|   structure.txt
-|   text.txt
 |   toDoList.md
-|   tree.txt
-|   tree1.txt
+|   tree3.txt
 |   tsconfig.app.json
 |   tsconfig.json
 |   tsconfig.node.json
@@ -78,47 +76,25 @@ online-party-quiz
 |       pre-commit
 |       
 +---demo-project
-|  
+|   \---vue-project
+|                       
 +---ISSUE_TEMPLATE
 |       bug_report.md
 |       feature_request.md
 |       
 +---node_modules
-|  
-+---public
-|   |   game.html
-|   |   index.html
-|   |   index_1.html
-|   |   index_was_working.html
-|   |   mobile-test.html
-|   |   room.html
-|   |   test-connection.html
-|   |   
-|   +---css
-|   |       game.css
-|   |       host.css
-|   |       styles.css
-|   |       
-|   +---images
-|   |       horse02.jpg
-|   |       horse1.jpg
-|   |       
-|   \---js
-|           config.js
-|           game.js
-|           mini_script.js
-|           mobile-optimiser.js
-|           room.js
-|           socket-manager.js
 |           
-+---screenshots
-|       host.png
-|       name.png
-|       question.png
-|       
++---old-project
+|   
++---public
+|   |   index.html
+|   |   
+|   \---images
+|           horse02.jpg
+|           horse1.jpg
+|           
 +---server
 |   |   index.ts
-|   |   tree.txt
 |   |   tsconfig.server.json
 |   |   
 |   +---models
@@ -132,7 +108,7 @@ online-party-quiz
 |   |   |   handlers_dont_use.ts
 |   |   |   
 |   |   \---handlers
-|   |           index.ts
+|   |           room.handlers.ts
 |   |           
 |   +---types
 |   |       game.types.ts
@@ -186,6 +162,8 @@ online-party-quiz
     |   |   |   index.ts
     |   |   |   
     |   |   +---components
+    |   |   |       QrCodeDisplay.vue
+    |   |   |       
     |   |   +---composables
     |   |   +---services
     |   |   +---store
@@ -248,14 +226,191 @@ online-party-quiz
             HomeView_without_link.vue
             HostView.vue
             LobbyView.vue
-            PlayerView.vue
-            RoomView.vue
-            
-
+            PlayerRegView.vue 
 ```
 
 ## Target structure (approximately)
-???
+```text
+online-party-quiz/
+├── 📁 server/                    # Серверная часть
+│   ├── index.ts                 # Главный серверный файл
+│   ├── config/                  # Конфигурация сервера
+│   │   ├── constants.ts         # Константы
+│   │   ├── env.ts              # Переменные окружения
+│   │   └── socket.config.ts    # Конфигурация Socket.IO
+│   ├── services/               # Бизнес-логика
+│   │   ├── RoomService.ts      # Управление комнатами
+│   │   ├── GameService.ts      # Логика игры
+│   │   ├── PlayerService.ts    # Управление игроками
+│   │   └── QuestionService.ts  # Работа с вопросами
+│   ├── socket/                 # Socket.IO обработчики
+│   │   ├── handlers/           # Обработчики событий
+│   │   │   ├── room.handlers.ts
+│   │   │   ├── game.handlers.ts
+│   │   │   ├── player.handlers.ts
+│   │   │   └── admin.handlers.ts
+│   │   └── middleware/         # Middleware для socket
+│   ├── models/                 # Модели данных
+│   │   ├── Room.ts
+│   │   ├── Player.ts
+│   │   ├── Game.ts
+│   │   └── Question.ts
+│   ├── storage/               # Хранение данных
+│   │   ├── InMemoryStorage.ts # Для MVP (потом заменить на БД)
+│   │   ├── RoomStorage.ts
+│   │   └── PlayerStorage.ts
+│   ├── utils/                 # Утилиты
+│   │   ├── qrGenerator.ts
+│   │   ├── codeGenerator.ts
+│   │   ├── validation.ts
+│   │   └── logger.ts
+│   └── api/                   # REST API (если нужно)
+│       ├── room.api.ts
+│       └── game.api.ts
+├── 📁 src/                     # Клиентская часть (Vue 3 + TypeScript)
+│   ├── main.ts               # Точка входа
+│   ├── App.vue              # Корневой компонент
+│   ├── 📁 core/             # Ядро приложения
+│   │   ├── constants/       # Константы
+│   │   ├── types/          # TypeScript типы
+│   │   │   ├── index.ts
+│   │   │   ├── socket.types.ts
+│   │   │   ├── game.types.ts
+│   │   │   ├── room.types.ts
+│   │   │   └── player.types.ts
+│   │   └── utils/          # Утилиты
+│   │       ├── qr.utils.ts
+│   │       ├── storage.utils.ts # Для сохранения состояния
+│   │       └── validation.utils.ts
+│   ├── 📁 modules/          # Функциональные модули
+│   │   ├── auth/           # Аутентификация
+│   │   │   ├── components/
+|   |   |   |   └── QrCodeDisplay.vue
+│   │   │   ├── composables/
+│   │   │   ├── services/
+│   │   │   ├── store/
+│   │   │   └── types/
+│   │   ├── connection/     # Подключение к серверу
+│   │   │   ├── composables/
+│   │   │   │   └── useConnection.ts
+│   │   │   └── store/
+│   │   ├── room/          # Комната
+│   │   │   ├── components/
+│   │   │   │   ├── RoomLobby.vue      # Лобби комнаты
+│   │   │   │   ├── PlayerList.vue     # Список игроков
+│   │   │   │   └── QrCodeDisplay.vue  # QR-код
+│   │   │   ├── composables/
+│   │   │   │   └── useRoom.ts
+│   │   │   ├── services/
+│   │   │   ├── store/
+│   │   │   │   └── room.store.ts
+│   │   │   └── types/
+│   │   ├── game/          # Игра
+│   │   │   ├── components/
+│   │   │   │   ├── screens/
+│   │   │   │   │   ├── PhotoScreen.vue     # Экран фото
+│   │   │   │   │   ├── QuestionScreen.vue  # Экран вопроса
+│   │   │   │   │   ├── LeaderboardScreen.vue # Лидерборд
+│   │   │   │   │   ├── FinalScreen.vue     # Финальный экран
+│   │   │   │   │   └── WarningScreen.vue   # Предупреждение
+│   │   │   │   ├── Timer.vue              # Таймер
+│   │   │   │   └── AnswerCard.vue         # Карточка ответа
+│   │   │   ├── composables/
+│   │   │   │   └── useGame.ts
+│   │   │   ├── services/
+│   │   │   ├── store/
+│   │   │   │   └── game.store.ts
+│   │   │   └── types/
+│   │   ├── player/        # Игрок
+│   │   │   ├── components/
+│   │   │   │   ├── PlayerNameInput.vue   # Ввод имени
+│   │   │   │   └── PlayerCard.vue        # Карточка игрока
+│   │   │   ├── composables/
+│   │   │   │   └── usePlayer.ts
+│   │   │   ├── store/
+│   │   │   │   └── player.store.ts
+│   │   │   └── types/
+│   │   └── socket/        # Socket.IO
+│   │       ├── composables/
+│   │       │   └── useSocket.ts
+│   │       ├── handlers/  # Клиентские обработчики
+│   │       └── types/
+│   ├── 📁 router/         # Маршрутизация
+│   │   ├── index.ts
+│   │   ├── routes/       # Определение маршрутов
+│   │   │   ├── index.ts
+│   │   │   ├── home.routes.ts
+│   │   │   ├── room.routes.ts
+│   │   │   ├── game.routes.ts
+│   │   │   ├── host.routes.ts
+│   │   │   └── player.routes.ts
+│   │   └── guards/       # Защита маршрутов
+│   │       ├── room.guard.ts   # Проверка доступа к комнате
+│   │       └── game.guard.ts   # Проверка состояния игры
+│   ├── 📁 stores/        # Pinia хранилища
+│   │   ├── index.ts
+│   │   ├── connection.store.ts
+│   │   └── persistence.store.ts # Для сохранения состояния
+│   ├── 📁 views/         # Страницы приложения
+│   │   ├── HomeView.vue          # Главная страница
+│   │   ├── ConnectView.vue       # Подключение к серверу
+│   │   ├── RoomCreateView.vue    # Создание комнаты
+│   │   ├── RoomLobbyView.vue     # Лобби комнаты (ведущий)
+│   │   ├── PlayerJoinView.vue    # Вход игрока (ввод имени)
+│   │   ├── PlayerWaitingView.vue # Ожидание игрока
+│   │   ├── GameView.vue          # Игра
+│   │   ├── HostGameView.vue      # Управление игрой (ведущий)
+│   │   └── ErrorView.vue         # Страница ошибок
+│   ├── 📁 layouts/       # Макеты страниц
+│   │   ├── DefaultLayout.vue
+│   │   ├── GameLayout.vue
+│   │   └── MobileLayout.vue
+│   ├── 📁 components/    # Общие компоненты
+│   │   ├── ui/          # UI компоненты
+│   │   │   ├── Button.vue
+│   │   │   ├── Input.vue
+│   │   │   ├── Card.vue
+│   │   │   └── Modal.vue
+│   │   ├── shared/      # Общие компоненты
+│   │   │   ├── CopyLink.vue
+│   │   │   └── ConnectionStatus.vue
+│   │   └── game/        # Игровые компоненты
+│   ├── 📁 composables/  # Общие композаблы
+│   │   ├── useLocalStorage.ts   # Для сохранения состояния
+│   │   ├── useDeviceDetection.ts # Определение устройства
+│   │   └── useConnection.ts
+│   ├── 📁 plugins/      # Плагины Vue
+│   │   ├── pinia-ssr.ts
+│   │   └── socket.plugin.ts
+│   └── 📁 assets/       # Ресурсы
+│       ├── styles/      # Стили
+│       │   ├── global.css
+│       │   ├── variables.css
+│       │   ├── game.css
+│       │   └── mobile.css
+│       └── images/      # Изображения
+├── 📁 shared/           # Общий код (клиент + сервер)
+│   ├── types.ts         # Общие типы
+│   ├── constants.ts     # Общие константы
+│   └── utils.ts         # Общие утилиты
+├── 📁 public/           # Статические файлы
+│   ├── index.html
+│   ├── mobile.html      # Для мобильной версии
+│   └── game.html        # Для игры
+├── 📁 tests/            # Тесты
+│   ├── unit/           # Юнит-тесты
+│   ├── e2e/           # End-to-end тесты
+│   └── integration/    # Интеграционные тесты
+├── 📁 docs/            # Документация
+├── 📁 scripts/         # Скрипты сборки и развертывания
+├── vite.config.ts      # Конфигурация Vite
+├── tsconfig.json       # TypeScript конфигурация
+├── tsconfig.server.json
+├── package.json
+├── .env.example        # Пример переменных окружения
+├── questions.csv       # Вопросы для игры
+└── README.md
+```
 
 ## Instruments
 package.json
@@ -275,3 +430,6 @@ time_sec;question_text;correct_option;n_of_other_options;other_option1;other_opt
 
 ## Secret features (think about them later)
 1. Secret names, which give you special bonuses in game. Example: if you enter name "Halfling" you will choose each time between only 2 options, not 4 or more like usual player.
+
+## Notes
+1. If you are updating server code, and you want to see the changes, restart the server by running `npm run dev`.

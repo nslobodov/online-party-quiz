@@ -1,9 +1,12 @@
+import { Player } from "@/core/types";
+
 // server/types/socket_new.types.ts
 export interface ServerEvents {
     'server-ip': (data: { ip: string; port: number }) => void
     'room-created': (data: { code: string }) => void
     'player-joined': (data: { playerId: string; name: string }) => void
     'player-left': (data: { playerId: string }) => void
+    'room:players-updated': (data: { players: Player[]}) => void
 }
 
 export interface ClientEvents {

@@ -8,7 +8,7 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 import { createServer as createViteServer } from 'vite'
 import os from 'os'
-import { registerSocketHandlers } from './socket/handlers/index'
+import { registerSocketHandlers } from './socket/handlers/room.handlers'
 import { RoomService } from './services/RoomService'
 import { GameService } from './services/GameService'
 import type {
@@ -87,7 +87,7 @@ async function startServer() {
     // Socket.IO
     io.on('connection', (socket) => {
         console.log('🔌 Client connected:', socket.id)
-        registerSocketHandlers(socket, roomService)
+        registerSocketHandlers(io, socket, roomService)
     })
     
     // В production: SPA fallback должен быть ПОСЛЕ всех API маршрутов

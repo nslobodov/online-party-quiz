@@ -50,25 +50,10 @@
                             Управлять комнатой {{ roomCode }}
                         </router-link>
                     </div>
-                    <div class="temp">
-                        Player link will be here: {{ serverInfo?.ip }}
-                    </div>
-                    <!--div class="qr-section">
-                        <div class="qr-container card" style="margin-bottom: 30px; text-align: center;">
-                            <h3 class="section-title"><i class="fas fa-qrcode"></i> QR-КОД ДЛЯ ПОДКЛЮЧЕНИЯ</h3>
-                            <div id="qr-code" style="margin: 20px auto; width: 200px; height: 200px; background-color: white;"></div>
-                            <div class="join-link-container" style="margin-top: 15px;">
-                                <div style="display: flex; gap: 10px;">
-                                    <input type="text" id="join-link" readonly 
-                                        style="flex: 1; padding: 10px; background: white; 
-                                                border: 1px solid #3498db; border-radius: 8px; color: #fff; font-size: 0.9rem;">
-                                    <button id="copy-link-btn" class="action-btn" style="color: white;">
-                                        <i class="fas fa-copy"></i> Копировать
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div-->
+                    <QrCodeDisplay 
+                            :join-url="joinUrl" 
+                            v-if="joinUrl"
+                        />
                 </div>
             </div>
 
@@ -81,12 +66,17 @@
 </template>
 
 <script lang="ts">
-import { ref, onUnmounted } from 'vue'
+import { ref, onUnmounted, computed } from 'vue'
 import { useSocket } from '@/modules/socket/composables/useSocket'
 import { useRoomStore } from '@/modules/room/store/room.store'
 import { useUserStore } from '@/modules/auth';
+import QrCodeDisplay from '@modules/auth/components/QrCodeDisplay.vue'
+
 
 export default {
+    components: {
+        QrCodeDisplay
+    },
     setup() {
         const socket = useSocket()
         const roomStore = useRoomStore()
@@ -109,14 +99,28 @@ export default {
             if (isConnecting.value) return
             
             isConnecting.value = true
-            console.log('🔌 Начинаю подключение к серверу...')
+            console.log('[HomeView] Начинаю подключение к серверу...')
             
             try {
                 // 1. Подключаемся к серверу
+                console.log('[HomeView] Подключаюсь к серверу...')
                 await socket.connect()
                 console.log('[HomeView] Успешно подключено к серверу')
                 
-                // 2. ТОЛЬКО ПОСЛЕ ПОДКЛЮЧЕНИЯ получаем IP сервера
+                // 2. Даем время на установку соединения
+                await new Promise(resolve => setTimeout(resolve, 100))
+                
+                // 3. Проверяем состояние подключения перед запросом IP
+                console.log('[HomeView] Проверяю состояние подключения...', {
+                    isConnected: socket.isConnected.value,
+                    socketId: socket.socketId.value
+                })
+                
+                if (!socket.isConnected.value) {
+                    throw new Error('Соединение не установлено после connect()')
+                }
+                
+                // 4. Только после этого получаем IP сервера
                 console.log('[HomeView] Запрашиваю IP сервера...')
                 const ipInfo = await socket.getServerIp()
                 
@@ -124,17 +128,34 @@ export default {
                     serverInfo.value = ipInfo
                     console.log(`[HomeView] Получен IP сервера: ${ipInfo.ip}:${ipInfo.port}`)
                 } else {
-                    console.warn('[HomeView] Не удалось получить IP сервера, использую localhost')
+                    console.warn('[HomeView] Не удалось получить IP сервера')
                     serverInfo.value = { ip: 'localhost', port: 3000 }
                 }
                 
-                // 3. Переходим на экран создания комнаты
+                // 5. Переходим на экран создания комнаты
                 currentScreen.value = 'create'
-
                 
             } catch (error) {
                 console.error('[HomeView] Ошибка подключения:', error)
-                alert(`[HomeView] Не удалось подключиться: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`)
+                if (error instanceof Error) {
+                    console.error('Полный стек:', error.stack)
+                }
+                
+                // Показываем понятное сообщение
+                let errorMessage = 'Не удалось подключиться'
+                if (error instanceof Error) {
+                    if (error.message.includes('Нет подключения')) {
+                        errorMessage = 'Подключение не установлено. Проверьте, запущен ли сервер.'
+                    } else if (error.message.includes('таймаут')) {
+                        errorMessage = 'Сервер не ответил. Проверьте подключение.'
+                    }
+                }
+                
+                
+                alert(`${errorMessage}: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`)
+                
+                // Сбрасываем состояние
+                currentScreen.value = 'connect'
             } finally {
                 isConnecting.value = false
             }
@@ -156,6 +177,7 @@ export default {
                 roomStore.setRoomCode(code)
                 
                 console.log('[HomeView] Комната создана:', code)
+                console.log('RoomCode with storage:', roomStore.code)
                 currentScreen.value = 'roomCreated'
                 
             } catch (error) {
@@ -165,6 +187,13 @@ export default {
                 isCreatingRoom.value = false
             }
         }
+
+        const joinUrl = computed(() => {
+            if (!serverInfo.value || !roomCode.value) return ''
+            
+            return `http://${serverInfo.value.ip}:${serverInfo.value.port}/player/${roomCode.value}`
+            // Или для мобильных: `http://${serverInfo.value.ip}:${serverInfo.value.port}/room/${roomCode.value}`
+            })
         
         const disconnect = () => {
             socket.disconnect()
@@ -179,6 +208,7 @@ export default {
             isConnecting,
             serverInfo,
             roomCode,
+            joinUrl,
             connectToServer,
             createRoomByClick,
             disconnect

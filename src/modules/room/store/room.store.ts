@@ -39,7 +39,7 @@ export const useRoomStore = defineStore('room', () => {
 
     const setRoomCode = (newCode: string) => {
         code.value = newCode
-        console.log('🔄 Код комнаты установлен:', code)
+        console.log('🔄[room.store] Код комнаты установлен:', code)
     }
 
     const setQuestions = (newQuestions: Question[]) => {
