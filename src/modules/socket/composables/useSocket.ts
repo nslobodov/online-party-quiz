@@ -4,7 +4,7 @@ import { io, type Socket } from 'socket.io-client'
 import { useUserStore } from '@/modules/auth'
 import { useRoomStore } from '@/modules/room'
 import { useGameStore } from '@/modules/game'
-import type { ClientEvents, ServerEvents, GameState, Player } from '@/core/types'
+import type { ClientEvents, ServerEvents, RoomState, Player } from '@/core/types'
 
 export function useSocket() {
     const socket = ref<Socket<ServerEvents, ClientEvents> | null>(null)
@@ -12,7 +12,9 @@ export function useSocket() {
     const getRoomStore = () => useRoomStore()
     const getGameStore = () => useGameStore()
 
-    const SERVER_URL = 'http://localhost:3000'
+    const SERVER_URL = window.location.hostname === 'localhost' 
+        ? 'http://localhost:3000'
+        : `http://${window.location.hostname}:3000`
 
     const isConnected = computed(() => socket.value?.connected || false)
     const socketId = computed(() => socket.value?.id || '')
@@ -43,11 +45,14 @@ export function useSocket() {
             }
             
             socket.value = io(SERVER_URL, {
-                autoConnect: true,
+                transports: ['websocket', 'polling'], // Явно указываем транспорты
                 reconnection: true,
                 reconnectionAttempts: 5,
                 reconnectionDelay: 1000,
-                timeout: 10000 // Таймаут подключения
+                timeout: 10000,
+                forceNew: true,
+                withCredentials: true,
+                path: '/socket.io/'
             })
 
             socket.value.on('connect', () => {
@@ -340,16 +345,88 @@ export function useSocket() {
         })
     }
 
-    const disconnect = () => {
-        // if (socket.value) {
+    const disconnect = (): Promise<void> => {
+    return new Promise((resolve) => {
+        if (socket.value) {
             console.log('🔌 Отключение от сервера...')
-        //     socket.value.disconnect()
-        //     socket.value = null
+            socket.value.disconnect()
+            socket.value = null
             
-        //     const userStore = getUserStore()
-        //     userStore.isConnected = false
-        //     userStore.socketId = ''
-        // }
+            const userStore = getUserStore()
+            userStore.isConnected = false
+            userStore.socketId = ''
+            userStore.role = null
+            userStore.roomCode = ''
+            
+            resolve()
+        } else {
+            resolve()
+        }
+    })
+}
+
+    const deleteRoom = (roomCode: string): Promise<boolean> => {
+        return new Promise((resolve) => {
+            console.log('[useSocket] Deleting room:', roomCode)
+            
+            if (!socket.value?.connected) {
+                console.error('[useSocket] Socket не подключен')
+                resolve(false)
+                return
+            }
+
+            socket.value.emit(
+                'room:delete-room', 
+                { roomCode },
+                (response: { success: boolean }) => {
+                    console.log('[useSocket] Ответ от сервера:', response)
+                    resolve(response?.success || false)
+                }
+            )
+            console.log('Emitted room:delete-room')
+        })
+    }
+
+    const getPlayers = (roomCode: string): Promise<{ 
+        players: Player[]; 
+        roomState: RoomState;
+    }> => {
+        return new Promise((resolve, reject) => {
+            console.log('[useSocket] Запрос списка игроков для комнаты:', roomCode)
+            
+            if (!socket.value?.connected) {
+                const error = new Error('Socket не подключен')
+                console.error(error.message)
+                reject(error)
+                return
+            }
+
+            const timeoutId = setTimeout(() => {
+                console.error(`⏰ Таймаут получения списка игроков для комнаты ${roomCode}`)
+                reject(new Error(`Таймаут получения списка игроков`))
+            }, 5000) // Уменьшаем таймаут до 5 секунд
+
+            socket.value.emit(
+                'room:get-players',
+                { roomCode: roomCode.toUpperCase() }, // Важно: приводим к верхнему регистру
+                (response: any) => {
+                    clearTimeout(timeoutId)
+                    console.log('[useSocket] Ответ от сервера на get-players:', response)
+                    
+                    if (response && response.success && response.players) {
+                        resolve({
+                            players: response.players,
+                            roomState: response.roomState || 'lobby'
+                        })
+                    } else {
+                        console.error('[useSocket] Ошибка в ответе:', response)
+                        reject(new Error(response?.error || 'Не удалось получить список игроков'))
+                    }
+                }
+            )
+            
+            console.log('[useSocket] Запрос отправлен')
+        })
     }
 
     return {
@@ -360,6 +437,8 @@ export function useSocket() {
         disconnect,
         createRoom,
         joinRoom,
+        deleteRoom,
+        getPlayers,
         // startGame,
         // submitAnswer,
         // pauseGame,

@@ -1,6 +1,7 @@
 // server/services/RoomService.ts
 import { useSocket } from '@/modules/socket/composables/useSocket.js'
-import { Room, Player } from '../../shared/types.js'
+import { Room, Player, GameState } from '../../shared/types.js'
+import { room } from '@/modules/index.js'
 
 export class RoomService {
     private rooms: Map<string, Room> = new Map()
@@ -81,7 +82,7 @@ export class RoomService {
         }
     }
     return undefined
-}
+    }
 
     updatePlayerStatus(roomCode: string, socketId: string, status: Player['status']): boolean {
         const room = this.getRoom(roomCode)
@@ -109,16 +110,43 @@ export class RoomService {
         this.socketToRoom.delete(socketId)
 
         // Если комната пуста, удаляем её
-        if (room.players.length === 0) {
-            this.rooms.delete(room.code)
-            console.log(`🗑️ Комната ${room.code} удалена (пустая)`)
-        }
+        // if (room.players.length === 0) {
+        //     this.rooms.delete(room.code)
+        //     console.log(`🗑️ Комната ${room.code} удалена (пустая)`)
+        // }
 
         return true
     }
 
     getRoomCount(): number {
         return this.rooms.size
+    }
+
+    deleteRoom(roomCode: string): boolean {
+        const normalizedCode = roomCode.toUpperCase()
+        const room = this.rooms.get(normalizedCode)
+        
+        if (room) {
+            // Удаляем всех игроков из room
+            room.players.forEach(player => {
+                if (player.socketId) {
+                    this.socketToRoom.delete(player.socketId)
+                }
+            })
+            
+            // Удаляем комнату
+            this.rooms.delete(normalizedCode)
+            
+            console.log(`🗑️ Комната ${room.code} удалена`)
+            
+            // Дополнительно: можно оповестить всех игроков в комнате
+            // io.to(room.code).emit('room:deleted', { message: 'Комната удалена' })
+            
+            return true
+        } else {
+            console.log(`❌ Комната ${roomCode} не найдена`)
+            return false
+        }
     }
 
     private generateRoomCode(): string {

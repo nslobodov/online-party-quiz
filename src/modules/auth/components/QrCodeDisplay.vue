@@ -76,7 +76,10 @@ export default {
         }*/
 
         // Генерируем QR-код при монтировании и при изменении ссылки
-        onMounted(generateQR)
+        onMounted(() => {
+            generateQR()
+            console.log('JoinUrl:', props.joinUrl)
+        })
         watch(() => props.joinUrl, generateQR)
 
         return {

@@ -14,7 +14,7 @@ export interface Room {
     code: string
     hostId: string
     players: Player[]
-    gameState: 'lobby' | 'starting' | 'playing' | 'paused' | 'finished'
+    gameState: RoomState
     maxPlayers: number
     currentQuestion?: number
 }
@@ -37,6 +37,8 @@ export interface GameState {
     leaderboard: Player[]
 }
 
+export type RoomState = 'lobby' | 'starting' | 'playing' | 'paused' | 'finished'
+
 // Socket события клиента -> сервера
 export type ClientEvents = {
     'create-room': (callback: (response: { code: string } | { error: string }) => void) => void
@@ -49,6 +51,36 @@ export type ClientEvents = {
     'get-server-ip': (callback: (data: { ip: string; port: number }) => void) => void
     'error': () => void
     'room:get-state': (data: any, callback: (data: any) => void) => void
+    'room:delete-room': (
+        data: { roomCode: string },
+        callback: (response: { success: boolean; message?: string; error?: string }) => void
+    ) => void;
+    'room:get-players': (
+        data: { roomCode: string },
+        callback: (response: {
+            success: boolean;
+            players?: Player[];
+            roomState?: string;
+            error?: string;
+        }) => void
+    ) => void;
+    'room:validate-host': (
+        data: { roomCode: string; oldSocketId: string; newSocketId: string },
+        callback: (response: any) => void
+    ) => void;
+    'player:restore-session': (
+        data: { 
+            roomCode: string; 
+            playerId: string; 
+            oldSocketId: string; 
+            newSocketId: string 
+        },
+        callback: (response: any) => void
+    ) => void;
+    'player:leave': (
+        data: { roomCode: string; playerId: string },
+        callback?: (response: any) => void
+    ) => void
 
 }
 

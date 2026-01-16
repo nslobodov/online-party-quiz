@@ -15,7 +15,7 @@ export interface Room {
     code: string
     hostId: string
     players: Player[]
-    gameState: 'lobby' | 'starting' | 'playing' | 'paused' | 'finished'
+    gameState: RoomState
     maxPlayers: number
     currentQuestion?: number
 }
@@ -37,6 +37,8 @@ export interface GameState {
     timeLeft: number
     leaderboard: Player[]
 }
+
+export type RoomState = 'lobby' | 'starting' | 'playing' | 'paused' | 'finished'
 
 // Socket события клиента -> сервера
 export type ClientEvents = {

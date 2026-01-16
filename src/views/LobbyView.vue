@@ -5,26 +5,15 @@
             <div class="room-info">
                 <h2>Комната: {{ room.code }}</h2>
                 <p>Код для присоединения: <strong>{{ room.code }}</strong></p>
-                <p>Игроков: {{ room.playerCount }}/10</p>
-                
-                <!-- QR код для мобильных -->
-                <div v-if="user.isHost" class="qr-section">
-                    <p>Отсканируйте для подключения с телефона:</p>
-                    <div class="qr-code">
-                        <!-- Здесь можно добавить генерацию QR кода -->
-                        <div class="qr-placeholder">
-                            QR код для: {{ qrUrl }}/join/{{ room.code }}
-                        </div>
-                    </div>
-                </div>
+                <p>Игроков: {{ countConnected }}/10</p>
             </div>
 
             <!-- Список игроков -->
             <div class="players-section">
-                <h3>Игроки ({{ room.playerCount }})</h3>
+                <h3>Игроки ({{ countConnected }})</h3>
                 
                 <div class="players-list">
-                    <div v-for="player in room.players" :key="player.id" class="player-card">
+                    <div v-for="player in connectedPlayers" :key="player.id" class="player-card">
                         <div class="player-info">
                             <span class="player-name">{{ player.name }}</span>
                             <span v-if="player.role === 'host'" class="player-role host">👑 Ведущий</span>
@@ -32,8 +21,9 @@
                         </div>
                         
                         <div class="player-status">
-                            <span v-if="player.isReady" class="ready">✅ Готов</span>
-                            <span v-else class="not-ready">⏳ Ожидает</span>
+                            <span v-if="player.isReady" class="ready" style="color: black;">✅ Готов</span>
+                            <span v-else-if="player.status!=='connected'" style="color: black;">Отключился</span>
+                            <span v-else class="not-ready" style="color: black;">⏳ Ожидает</span>
                             <span class="player-score">🏆 {{ player.score }}</span>
                         </div>
                     </div>
@@ -81,6 +71,10 @@ import { useSocket } from '@/modules/socket'
 const user = useUserStore()
 const room = useRoomStore()
 const socket = useSocket()
+const connectedPlayers = room.players.filter((player) => {
+    if (player.status === 'connected') return player
+})
+const countConnected = connectedPlayers.length
 
 // Вычисляем URL для QR кода
 const qrUrl = computed(() => {
@@ -158,6 +152,7 @@ const toggleReady = () => {
     background: #f9f9f9;
     border-radius: 0.5rem;
     border-left: 4px solid #2196F3;
+    color: black;
 }
 
 .player-card .host {
